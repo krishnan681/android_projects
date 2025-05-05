@@ -1,0 +1,6303 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Linking,
+  Alert,
+  Modal,
+} from 'react-native';
+
+const Subscription = () => {
+  const [selectedPrice, setSelectedPrice] = useState(null);
+  const [userData, setUserData] = useState({
+    businessname: '',
+    address: '',
+    city: '',
+    pincode: '',
+  });
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const handleBuyNow = price => {
+    setSelectedPrice(price);
+  };
+
+  const validateInputs = () => {
+    const { businessname, address, city, pincode } = userData;
+
+    if (!businessname.trim() || !address.trim() || !city.trim()) {
+      Alert.alert('Validation Error', 'Please fill in all required fields.');
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(pincode)) {
+      Alert.alert('Validation Error', 'Pincode must be a 6-digit number.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleUPIPayment = amount => {
+    if (!validateInputs()) return;
+
+    const payeeVPA = 'naveenbsc.mca1518-1@okicici';
+    const payeeName = 'Signpost';
+    const transactionNote = 'Subscription Payment';
+
+    const upiUrl = `upi://pay?pa=${payeeVPA}&pn=${encodeURIComponent(
+      payeeName,
+    )}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR`;
+
+    Linking.canOpenURL(upiUrl)
+      .then(supported => {
+        if (!supported) {
+          Alert.alert('Error', 'No UPI app found.');
+        } else {
+          return Linking.openURL(upiUrl).catch(err => {
+            console.error('Error opening UPI app:', err);
+            Alert.alert('Error', 'Something went wrong while opening UPI app.');
+          });
+        }
+      })
+      .catch(err => {
+        console.error('Error checking UPI support:', err);
+        Alert.alert('Error', 'Failed to initiate payment.');
+      });
+  };
+
+  const handleCancelAndReset = () => {
+    setSelectedPrice(null);
+    setUserData({
+      businessname: '',
+      address: '',
+      city: '',
+      pincode: '',
+    });
+    setShowCancelModal(false);
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
+      {selectedPrice === null ? (
+        <View>
+          <Text style={styles.title}>Choose Your Plan</Text>
+
+          {[
+            {
+              title: '1 Week Trial Pack',
+              price: 20,
+              features: ['• Duration: 7 Days', '• Bulk Messages for 7 days', '• Free Support'],
+            },
+            {
+              title: '1 Month Pack',
+              price: 200,
+              features: ['• Referral Bonus: ₹50', '• Free Support', '• Sign-up Bonus: ₹20'],
+            },
+            {
+              title: '1 Year Pack',
+              price: 1000,
+              features: ['• Unlimited messages', '• 24/7 Support', '• Sign-up Bonus: ₹20'],
+            },
+          ].map((plan, idx) => (
+            <View style={styles.planCard} key={idx}>
+              <Text style={styles.planHeader}>{plan.title}</Text>
+              <Text style={styles.planPrice}>₹{plan.price}</Text>
+              <View style={styles.features}>
+                {plan.features.map((feature, i) => (
+                  <Text key={i}>{feature}</Text>
+                ))}
+              </View>
+              <TouchableOpacity
+                style={styles.buyButton}
+                onPress={() => handleBuyNow(plan.price)}>
+                <Text style={styles.buyButtonText}>Buy Now</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View>
+          <Text style={styles.title}>Confirm Order & Pay</Text>
+          <Text style={styles.subtitle}>
+            Please make the payment, after that you can enjoy all the features.
+          </Text>
+
+          <Text style={styles.sectionTitle}>From Payment Details</Text>
+          <TextInput
+            placeholder="Business Name"
+            style={styles.input}
+            value={userData.businessname}
+            onChangeText={text => setUserData({ ...userData, businessname: text })}
+          />
+          <TextInput
+            placeholder="Address"
+            style={styles.input}
+            value={userData.address}
+            onChangeText={text => setUserData({ ...userData, address: text })}
+          />
+          <TextInput
+            placeholder="City"
+            style={styles.input}
+            value={userData.city}
+            onChangeText={text => setUserData({ ...userData, city: text })}
+          />
+          <TextInput
+            placeholder="Pincode"
+            style={styles.input}
+            keyboardType="numeric"
+            value={userData.pincode}
+            onChangeText={text => setUserData({ ...userData, pincode: text })}
+          />
+
+          <Text style={styles.sectionTitle}>To Billing Address</Text>
+          <Text style={styles.readOnlyField}>Company: signpostphonebook</Text>
+          <Text style={styles.readOnlyField}>Address: Address</Text>
+          <Text style={styles.readOnlyField}>City: Coimbatore</Text>
+          <Text style={styles.readOnlyField}>Pincode: 621450</Text>
+
+          <View style={styles.paymentSummary}>
+            <Text style={styles.payLabel}>You have to pay:</Text>
+            <Text style={styles.amount}>₹{selectedPrice}.00</Text>
+            <Text>Enjoy all features and perks after you complete payment.</Text>
+            <Text style={styles.highlight}>
+              100% Guaranteed support and updates for the next 5 years.
+            </Text>
+          </View>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.buyButton, { backgroundColor: '#ccc' }]}
+              onPress={() => setShowCancelModal(true)}>
+              <Text style={styles.buyButtonText}>Previous</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.buyButton}
+              onPress={() => handleUPIPayment(selectedPrice)}>
+              <Text style={styles.buyButtonText}>Pay ₹{selectedPrice}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        visible={showCancelModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCancelModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Cancel Confirmation</Text>
+            <Text style={styles.modalMessage}>Do you want to cancel and go back?</Text>
+
+            <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.buyButton, {backgroundColor: '#ccc'}]}
+              onPress={() => setShowCancelModal(true)}>
+              <Text style={styles.buyButtonText}>Previous</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.buyButton}
+              onPress={() => handleUPIPayment(selectedPrice)}>
+              <Text style={styles.buyButtonText}>Pay ₹{selectedPrice}</Text>
+            </TouchableOpacity>
+          </View>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
+  subtitle: { fontSize: 14, marginBottom: 20 },
+  planCard: {
+    backgroundColor: '#f9f9f9',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  planHeader: { fontSize: 18, fontWeight: 'bold' },
+  planPrice: { fontSize: 20, color: '#10b981', marginVertical: 8 },
+  features: { marginBottom: 12 },
+  buyButton: {
+    backgroundColor: '#10b981',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buyButtonText: { color: '#fff', fontWeight: 'bold' },
+  sectionTitle: { fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+  },
+  readOnlyField: { backgroundColor: '#f0f0f0', padding: 10, marginBottom: 6 },
+  paymentSummary: {
+    backgroundColor: '#2563eb',
+    padding: 20,
+    borderRadius: 16,
+    marginTop: 32,
+    marginBottom: 28,
+    elevation: 5,
+  },
+  payLabel: {
+    color: '#ffffff',
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  amount: {
+    fontSize: 36,
+    color: '#facc15',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  highlight: {
+    marginTop: 12,
+    color: '#ffffff',
+    fontStyle: 'italic',
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginTop: 5,
+    marginBottom: 40,
+    gap: 12,
+  },
+
+  buyButton: {
+    flex: 1,
+    backgroundColor: '#10b981',
+    paddingVertical: 14,
+    borderRadius: 30,
+    alignItems: 'center',
+    elevation: 3,
+  },
+  buyButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    width: '80%',
+    padding: 20,
+    borderRadius: 8,
+    elevation: 5,
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  modalMessage: { fontSize: 14, marginBottom: 20 },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalButton: {
+    padding: 10,
+    borderRadius: 6,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});
+
+export default Subscription;
+
+
+
+9566007896
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
+  subtitle: { fontSize: 14, marginBottom: 20 },
+  planCard: {
+    backgroundColor: '#f9f9f9',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  planHeader: { fontSize: 18, fontWeight: 'bold' },
+  planPrice: { fontSize: 20, color: '#10b981', marginVertical: 8 },
+  features: { marginBottom: 12 },
+  buyButton: {
+    backgroundColor: '#10b981',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buyButtonText: { color: '#fff', fontWeight: 'bold' },
+  sectionTitle: { fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+  },
+  readOnlyField: { backgroundColor: '#f0f0f0', padding: 10, marginBottom: 6 },
+  paymentSummary: {
+    backgroundColor: '#2563eb',
+    padding: 20,
+    borderRadius: 16,
+    marginTop: 32,
+    marginBottom: 28,
+    elevation: 5,
+  },
+  payLabel: {
+    color: '#ffffff',
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  amount: {
+    fontSize: 36,
+    color: '#facc15',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  highlight: {
+    marginTop: 12,
+    color: '#ffffff',
+    fontStyle: 'italic',
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginTop: 5,
+    marginBottom: 40,
+    gap: 12,
+  },
+
+  buyButton: {
+    flex: 1,
+    backgroundColor: '#10b981',
+    paddingVertical: 14,
+    borderRadius: 30,
+    alignItems: 'center',
+    elevation: 3,
+  },
+  buyButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    width: '80%',
+    padding: 20,
+    borderRadius: 8,
+    elevation: 5,
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  modalMessage: { fontSize: 14, marginBottom: 20 },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalButton: {
+    padding: 10,
+    borderRadius: 6,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import React, { useState, useEffect, useContext } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Linking,
+  Alert,
+  Modal,
+  BackHandler,
+} from 'react-native';
+
+import { AuthContext } from '../AuthContext';
+
+const Subscription = () => {
+  const [selectedPrice, setSelectedPrice] = useState(null);
+  const { userData, setUserData } = useContext(AuthContext);
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const handleBuyNow = price => {
+    setSelectedPrice(price);
+  };
+
+  const validateInputs = () => {
+    const { businessname, address, city, pincode } = userData;
+
+    if (!businessname.trim() || !address.trim() || !city.trim()) {
+      Alert.alert('Validation Error', 'Please fill in all required fields.');
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(pincode)) {
+      Alert.alert('Validation Error', 'Pincode must be a 6-digit number.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleUPIPayment = amount => {
+    if (!validateInputs()) return;
+  
+    const payeeVPA = 'naveenbsc.mca1518-1@okicici';
+    const payeeName = 'Signpost';
+    const transactionNote = 'Subscription Payment';
+  
+    const upiUrl = `upi://pay?pa=${payeeVPA}&pn=${encodeURIComponent(
+      payeeName,
+    )}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR`;
+  
+    try {
+      Linking.openURL(upiUrl)
+        .then(() => {
+          console.log('Opened UPI app successfully');
+        })
+        .catch(err => {
+          console.error('Error opening UPI app:', err);
+          Alert.alert('Error', 'Unable to open any UPI app. Please try again.');
+        });
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      Alert.alert('Error', 'Something went wrong while opening UPI app.');
+    }
+  };
+  
+
+  const handleCancelAndReset = () => {
+    setSelectedPrice(null);
+    setUserData({
+      businessname: '',
+      address: '',
+      city: '',
+      pincode: '',
+    });
+    setShowCancelModal(false);
+  };
+ 
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedPrice !== null) {
+        setShowCancelModal(true);
+        return true;  
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();  
+  }, [selectedPrice]);
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
+      {selectedPrice === null ? (
+        <View>
+          <Text style={styles.title}>Choose Your Plan</Text>
+
+          {[{ title: '1 Week Trial Pack', price: 20, features: ['• Duration: 7 Days', '• Bulk Messages for 7 days', '• Free Support'] },
+            { title: '1 Month Pack', price: 200, features: ['• Referral Bonus: ₹50', '• Free Support', '• Sign-up Bonus: ₹20'] },
+            { title: '1 Year Pack', price: 1000, features: ['• Unlimited messages', '• 24/7 Support', '• Sign-up Bonus: ₹20'] },
+          ].map((plan, idx) => (
+            <View style={styles.planCard} key={idx}>
+              <Text style={styles.planHeader}>{plan.title}</Text>
+              <Text style={styles.planPrice}>₹{plan.price}</Text>
+              <View style={styles.features}>
+                {plan.features.map((feature, i) => (
+                  <Text key={i}>{feature}</Text>
+                ))}
+              </View>
+              <TouchableOpacity
+                style={styles.buyButton}
+                onPress={() => handleBuyNow(plan.price)}>
+                <Text style={styles.buyButtonText}>Buy Now</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View>
+          <Text style={styles.title}>Confirm Order & Pay</Text>
+          <Text style={styles.subtitle}>
+            Please make the payment, after that you can enjoy all the features.
+          </Text>
+
+          <Text style={styles.sectionTitle}>From Payment Details</Text>
+          <TextInput
+            placeholder="Business Name"
+            style={styles.input}
+            value={userData.businessname}
+            onChangeText={text => setUserData({ ...userData, businessname: text })}
+          />
+          <TextInput
+            placeholder="Address"
+            style={styles.input}
+            value={userData.address}
+            onChangeText={text => setUserData({ ...userData, address: text })}
+          />
+          <TextInput
+            placeholder="City"
+            style={styles.input}
+            value={userData.city}
+            onChangeText={text => setUserData({ ...userData, city: text })}
+          />
+          <TextInput
+            placeholder="Pincode"
+            style={styles.input}
+            keyboardType="numeric"
+            value={userData.pincode}
+            onChangeText={text => setUserData({ ...userData, pincode: text })}
+          />
+
+          <Text style={styles.sectionTitle}>To Billing Address</Text>
+          <Text style={styles.readOnlyField}>Company: signpostphonebook</Text>
+          <Text style={styles.readOnlyField}>Address: Address</Text>
+          <Text style={styles.readOnlyField}>City: Coimbatore</Text>
+          <Text style={styles.readOnlyField}>Pincode: 621450</Text>
+
+          <View style={styles.paymentSummary}>
+            <Text style={styles.payLabel}>You have to pay:</Text>
+            <Text style={styles.amount}>₹{selectedPrice}.00</Text>
+            <Text>Enjoy all features and perks after you complete payment.</Text>
+            <Text style={styles.highlight}>
+              100% Guaranteed support and updates for the next 5 years.
+            </Text>
+          </View>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.buyButton, { backgroundColor: '#ccc' }]}
+              onPress={() => setShowCancelModal(true)}>
+              <Text style={styles.buyButtonText}>Previous</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.buyButton}
+              onPress={() => handleUPIPayment(selectedPrice)}>
+              <Text style={styles.buyButtonText}>Pay ₹{selectedPrice}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        visible={showCancelModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCancelModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Cancel Confirmation</Text>
+            <Text style={styles.modalMessage}>Do you want to cancel and go back?</Text>
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#ccc' }]}
+                onPress={() => setShowCancelModal(false)}>
+                <Text style={styles.modalButtonText}>No</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#ef4444' }]}
+                onPress={handleCancelAndReset}>
+                <Text style={styles.modalButtonText}>Yes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+    container: { padding: 16 },
+    title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
+    subtitle: { fontSize: 14, marginBottom: 20 },
+    planCard: {
+      backgroundColor: '#f9f9f9',
+      padding: 16,
+      marginBottom: 12,
+      borderRadius: 8,
+      elevation: 2,
+    },
+    planHeader: { fontSize: 18, fontWeight: 'bold' },
+    planPrice: { fontSize: 20, color: '#10b981', marginVertical: 8 },
+    features: { marginBottom: 12 },
+    buyButton: {
+      backgroundColor: '#10b981',
+      padding: 10,
+      borderRadius: 6,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buyButtonText: { color: '#fff', fontWeight: 'bold' },
+    sectionTitle: { fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
+    input: {
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 6,
+      padding: 10,
+      marginBottom: 12,
+    },
+    readOnlyField: { backgroundColor: '#f0f0f0', padding: 10, marginBottom: 6 },
+    paymentSummary: {
+      backgroundColor: '#2563eb',
+      padding: 20,
+      borderRadius: 16,
+      marginTop: 32,
+      marginBottom: 28,
+      elevation: 5,
+    },
+    payLabel: {
+      color: '#ffffff',
+      fontSize: 16,
+      marginBottom: 8,
+    },
+    amount: {
+      fontSize: 36,
+      color: '#facc15',
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
+    highlight: {
+      marginTop: 12,
+      color: '#ffffff',
+      fontStyle: 'italic',
+    },
+  
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
+      marginTop: 5,
+      marginBottom: 40,
+      gap: 12,
+    },
+  
+    buyButton: {
+      flex: 1,
+      backgroundColor: '#10b981',
+      paddingVertical: 14,
+      borderRadius: 30,
+      alignItems: 'center',
+      elevation: 3,
+    },
+    buyButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+  
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: '#00000099',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContainer: {
+      backgroundColor: '#fff',
+      width: '80%',
+      padding: 20,
+      borderRadius: 8,
+      elevation: 5,
+    },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+    modalMessage: { fontSize: 14, marginBottom: 20 },
+    modalButtonRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 10,
+    },
+    modalButton: {
+      padding: 10,
+      borderRadius: 6,
+    },
+    modalButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+  });
+
+export default Subscription;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const ITEM_WIDTH = SCREEN_WIDTH * 0.85;
+const SPACING = 10;
+const SIDE_SPACING = (SCREEN_WIDTH - ITEM_WIDTH) / 5;
+
+
+
+
+
+
+orignal landing page code-----------------
+
+
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, ImageBackground, SafeAreaView, StyleSheet,Animated, Dimensions, Image, Alert } from "react-native";
+import { TextInput } from "react-native-gesture-handler";
+import { Icon } from "react-native-paper";
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { AuthContext } from "./AuthContext";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import axios from "axios";
+
+const data=[
+    {name: "Grid1", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid2", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid3", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid4", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid5", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid6", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid7", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid8", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid9", image:require("../src/assets/images/FirstImage.jpg")},
+    {name: "Grid10", image:require("../src/assets/images/FirstImage.jpg")},
+]
+const products=[
+    {name: "Automation", image:require("../src/assets/images/Automation.jpg"),route:"Automation"},
+    {name: "Foundary", image:require("../src/assets/images/foundary.jpg"), route:"Foundary"},
+    {name: "Machinary", image:require("../src/assets/images/Machinery.jpeg"), route:"Machinery"},
+    {name: "CNC", image:require("../src/assets/images/modelcnc.jpeg"), route:"CNC"},
+    {name: "Textiles", image:require("../src/assets/images/textiles.jpg"), route:"Textiles"},
+    {name: "Fabrications", image:require("../src/assets/images/fabrication.jpg"), route:"Fabrication"},
+]
+
+export default function Landingpage ({navigation}){
+    const {user, userData} = useContext(AuthContext)
+    const [profileImage, setProfileImage] = useState(null);
+    const width = Dimensions.get("window").width;
+
+    const flatListRef=useRef();
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const progress = useRef(new Animated.Value(0)).current;
+    const intervalRef = useRef(null);
+
+    const ITEM_WIDTH = width * 0.9;
+    const SPACING = 10;
+    const SCREEN_WIDTH = Dimensions.get('window').width;
+const ITEM_WIDTH = SCREEN_WIDTH * 0.85;
+const SPACING = 10;
+const SIDE_SPACING = (SCREEN_WIDTH - ITEM_WIDTH) / 5;
+
+
+    //Animated the Progress Bar
+    const animateProgress = ()=>{
+        progress.setValue(0);
+        Animated.timing(progress,{
+            toValue:1,
+            duration:3000,
+            useNativeDriver:false,
+        }).start();
+    };
+
+    const scrollToIndex =(index)=>{
+        flatListRef.current?.scrollToIndex({index, animated :true});
+        animateProgress()
+    }
+    useEffect(()=>{
+        animateProgress();
+
+        intervalRef.current = setInterval(()=>{
+            const nextIndex = (currentIndex + 1) % data.length;
+            scrollToIndex(currentIndex);
+        }, 3000)
+
+        return ()=>clearInterval(intervalRef.current);
+    }, [])
+
+    useEffect(() => {
+        const fetchProfileImage = async () => {
+          if (!userData?.id) return;
+    
+          try {
+            const response = await axios.get(
+              `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
+            );
+    
+            if (response.data.success) {
+              const imageUrl = response.data.imageUrl;
+              const fullUrl = imageUrl.startsWith('http')
+                ? imageUrl
+                : `https://signpostphonebook.in/${imageUrl}`;
+              setProfileImage(fullUrl + `?t=${new Date().getTime()}`); // Prevent caching
+            }
+          } catch (error) {
+            console.error('Error fetching profile image:', error);
+          }
+        };
+    
+        fetchProfileImage();
+      }, [userData?.id]);
+
+      const renderItem =({item})=>(
+                                   
+            <TouchableOpacity
+            style={{               
+               height:240,
+               width:ITEM_WIDTH
+               ,               
+            }}                            
+            >
+                <ImageBackground
+                source={item.image}
+                resizeMode="contain"
+                imageStyle={{gap:20,borderRadius:20,}}
+            
+                style={{
+                    flex:1,
+                    justifyContent:"center",
+                    alignItems:"center",
+                    borderRadius:20,
+                    overflow:"hidden", 
+                    margin:10,                               
+                }}
+                >
+    
+                </ImageBackground>
+            
+            </TouchableOpacity>
+      )
+        const HandleMomentScrollEnd = (event) =>{
+            const offsetX = event.nativeEvent.contentOffset.x;
+            const newIndex = Math.round(offsetX / (ITEM_WIDTH + SPACING));
+            
+            
+
+            clearInterval(intervalRef.current);
+            intervalRef.current = setInterval(() => {
+                const nextIndex = (newIndex + 1) %data.length;
+                scrollToIndex(nextIndex);
+            }, 3000);
+        }
+      
+
+
+    return(
+        <View style={{flex:1, marginTop:20, backgroundColor:"#fff8dc"}}>
+            <FlatList
+            data={products}
+            numColumns={2}
+            columnWrapperStyle={{gap:10, paddingHorizontal:12}}
+            contentContainerStyle= {{gap:10, paddingBottom:10}}
+            keyExtractor={(item, index)=>item.name + index}
+            showsVerticalScrollIndicator={false}
+            renderItem={({item})=>{
+                return(
+                    <TouchableOpacity
+                    onPress={()=>{navigation.navigate(item.route)}}
+                     style={{
+                        flex:1,
+                        height:200,
+                        borderRadius:20,
+                        backgroundColor:"#8b0000"
+                        
+                        }}>
+                        <ImageBackground 
+                            source={item.image}
+                            resizeMode="cover"
+                            imageStyle={{borderRadius:20}}
+                            style={{                                
+                               flex:1,
+                                justifyContent:"center",
+                                alignItems:"center", 
+                                flexDirection:"row",
+                            }}>
+                            </ImageBackground>
+                        <Text style={{color:"#fff", textAlign:"center", fontSize:20, fontWeight:600}}>{item.name}</Text>
+                    </TouchableOpacity>
+                );
+            }}
+            ListHeaderComponentStyle={{marginVertical:10}}
+            ListHeaderComponent={()=>(
+                <View>
+                    <View style = {styles.welcomeContainer}>
+                        <View>
+                        <Text style={styles.welcomeText}>
+                            Welcome {userData.businessname || userData.person ? (<Text>
+                                {"\n"}{userData.businessname || userData.person}</Text>) : 'Guest'}
+                        </Text>
+                        </View>                        
+                        <View>
+                        <TouchableOpacity
+                            style={styles.profileIconContainer}
+                             onPress={() => {
+                            if (userData?.id) {
+                                navigation.navigate('Profile'); // Navigate to Profile if logged in
+                            }  else {
+                                Alert.alert(
+                               'Login Required',
+                               'You need to log in to view your Profile.',
+                               [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+                            );
+                        }
+                        }}>
+                        {userData?.id && profileImage ? (
+                        <Image
+                        source={{uri: profileImage}}
+                        style={styles.profileIcon}
+                        resizeMode="cover"
+                        />
+                        ) : (
+                        <MaterialIcons name="person" size={28} color="black" />
+                        )}
+                        </TouchableOpacity>
+                        </View>
+                    </View>
+                    <View style={styles.listHeader}>
+                        <Text style={styles.listHeadLine}>Celfone5G+ PHONE BOOK</Text>
+                    </View>
+                    <View style={styles.assembler}>
+                     <TouchableOpacity style={styles.main} >
+                        <TextInput placeholder="Firm/Product.." style={styles.input} onFocus={()=>navigation.navigate("FeauturedSearch")}></TextInput>                        
+                     </TouchableOpacity>
+                    <View style={styles.buttonP}>
+                        <TouchableOpacity>
+                            <FontAwesome name="search" size={30}/>
+                        </TouchableOpacity>
+                    </View>
+                    </View>
+                    <View style={{
+                        display:"flex",
+                        justifyContent:"space-between",
+                        alignItems:"center",
+                        flexDirection:"row",
+                        paddingHorizontal:12,
+                        marginTop:15,
+                    }}>
+                        <Text style={{fontWeight:"700", fontSize:20, color:"#8b0000", marginBottom:5}}>Our Customers</Text>
+                        
+                    </View>
+                    <View style={{ backgroundColor: '#deb887', paddingVertical: 10 }}>                    
+                    <FlatList    
+                    ref={flatListRef}              
+                    data={data}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{gap:10, paddingHorizontal:10}}
+                    keyExtractor={(item, index)=>item + index}
+                    renderItem={renderItem}                    
+                    onMomentumScrollEnd={HandleMomentScrollEnd}
+                    scrollEventThrottle={16}
+                    />
+
+                    {/* Progress Bar */}
+                    {/* <View style={styles.progressBarContainer}>
+                        {data.map((_,i)=>(
+                            <View key={i} style={styles.track}>
+                                {i === currentIndex && (
+                                    <Animated.View style={[styles.fill, {
+                                        width:progress.interpolate({
+                                            inputRange:[0, 1],
+                                            outputRange:['0%', '100%'],
+                                        })
+                                    }
+                                ]}
+                                />
+                                )}
+                            </View>
+                        )
+                        )}
+                    </View> */}
+                    </View>
+                    <View style={{
+                        display:"flex",
+                        justifyContent:"space-between",
+                        alignItems:"center",
+                        flexDirection:"row",
+                        paddingHorizontal:12,
+                        marginTop:15,
+                    }}>
+                        <Text style={{fontWeight:"600", color:"#8b0000", fontSize:20}}>Products</Text>
+                        <Text style={{color:"#800080"}}>See All</Text>
+                    </View>
+                </View>
+            )}
+            />
+        </View>
+    )
+}
+
+const styles = StyleSheet.create({
+    welcomeContainer:{
+        flex:1,
+        flexDirection:"row",
+        justifyContent : "space-between",
+        margin:6,
+    },
+    welcomeText: {
+        fontSize: 18,
+        color: 'black',
+        fontWeight: 'bold',
+        marginLeft:5,
+      },
+      profileIconContainer: {
+        width: 30,
+        height: 30,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#deb887',
+        borderWidth:1,
+        borderColor:"red"
+         // Light gray background for icon style
+      },
+      profileIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 90, // Circular profile image
+        zIndex: 1,
+      },
+    assembler:{
+        flexDirection:'row',
+        alignItems:'center',
+        justifyContent:'center',
+    },
+    main:{
+        backgroundColor:"#fff",
+        width:300,
+        height:50,
+        borderTopLeftRadius:40,
+        borderBottomLeftRadius:40,
+        borderWidth:1,
+        borderColor:"#000000",
+    },
+    input:{
+        marginLeft:10,
+        marginTop:4,
+        fontSize:20,
+    },
+    buttonP:{
+        marginLeft:2,
+        height:50,
+        width:60,
+        backgroundColor:"#fff",
+        borderWidth:1,
+        borderBottomRightRadius:30,
+        borderTopRightRadius:30,
+        borderColor:"#000000",
+        justifyContent:"center",
+        alignItems:"center"
+    },
+    carouselItem:{
+        flex:1,
+        justifyContent:"center",
+        overflow:"hidden",
+    },
+    img:{
+        width:350,
+        height:240
+    },
+    listHeader:{
+        height:55,
+        justifyContent:"center",
+        alignItems:"center"
+      },
+      listHeadLine:{
+        color:"#8b0000",
+        fontSize:25,
+        fontWeight:"bold"
+      },
+      progressBarContainer: {
+        display:"flex",
+        justifyContent:"space-between",
+        alignItems:"center",
+        flexDirection:"row",
+        paddingHorizontal:12,
+        marginTop:-10,        
+      },
+      track: {
+        width: 20,
+        height: 4,
+        gap:1,
+        backgroundColor: '#fff',
+        borderRadius: 2,
+        overflow: 'hidden',
+      },
+      fill: {
+        height: 4,
+        backgroundColor: '#333',
+      },
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+landing page----------
+import React from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, FlatList, Image, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+const categories = [
+  { name: 'FOOD', image: require('../src/assets/images/adv.png') },
+  { name: 'FASHION', image: require('../src/assets/images/adv.png') },
+  { name: 'ELECTRONICS', image: require('../src/assets/images/adv.png') },
+  { name: 'GROCERY', image: require('../src/assets/images/adv.png') },
+];
+
+const bestOffers = [
+  'Licious', 'Lenskart', 'IDFC First Bank', 'IDfc Bank', 'Amazon', 'Flipkart'
+];
+
+const Landingpage = () => {
+  return (
+    <ScrollView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.welcomeText}>Welcome</Text>
+          <Text style={styles.username}>pari</Text>
+        </View>
+        <Icon name="person-circle-outline" size={40} color="#9c9c9c" />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <TextInput placeholder="Search" style={styles.searchInput} />
+        <Icon name="search-outline" size={20} color="#555" style={styles.searchIcon} />
+      </View>
+
+      {/* Banner */}
+      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.bannerContainer}>
+        <Image source={require('../src/assets/images/adv.png')} style={styles.bannerImage} />
+        <Image source={require('../src/assets/images/adv.png')} style={styles.bannerImage} />
+        <Image source={require('../src/assets/images/adv.png')} style={styles.bannerImage} />
+      </ScrollView>
+
+      {/* Category */}
+      <Text style={styles.sectionTitle}>Category</Text>
+      <FlatList
+        horizontal
+        data={categories}
+        keyExtractor={(item) => item.name}
+        renderItem={({ item }) => (
+          <View style={styles.categoryItem}>
+            <Image source={item.image} style={styles.categoryImage} />
+            <Text style={styles.categoryText}>{item.name}</Text>
+          </View>
+        )}
+        showsHorizontalScrollIndicator={false}
+      />
+
+      {/* Best Offers */}
+      <Text style={styles.sectionTitle}>Best Offers</Text>
+      <View style={styles.offersGrid}>
+        {bestOffers.map((offer, index) => (
+          <TouchableOpacity key={index} style={styles.offerCard}>
+            <Text style={styles.offerText}>{offer}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 15 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 },
+  welcomeText: { fontSize: 22, fontWeight: 'bold' },
+  username: { fontSize: 16, color: '#555' },
+
+  searchContainer: { position: 'relative', marginVertical: 15 },
+  searchInput: {
+    backgroundColor: '#f2f2f2',
+    borderRadius: 10,
+    padding: 10,
+    paddingLeft: 40,
+  },
+  searchIcon: { position: 'absolute', left: 10, top: 13 },
+
+  bannerContainer: { height: 180, marginBottom: 10 },
+  bannerImage: {
+    width: 330,
+    height: 180,
+    borderRadius: 15,
+    marginRight: 10,
+    resizeMode: 'cover',
+  },
+
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginVertical: 10 },
+  categoryItem: { alignItems: 'center', marginRight: 20 },
+  categoryImage: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#eee' },
+  categoryText: { marginTop: 5, fontSize: 12 },
+
+  offersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  offerCard: {
+    backgroundColor: '#f2f5ff',
+    borderRadius: 12,
+    width: '48%',
+    paddingVertical: 20,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  offerText: { fontSize: 15, color: '#333', fontWeight: '500' },
+});
+
+export default Landingpage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  ImageBackground,
+  Dimensions,
+  Alert,
+} from 'react-native';
+
+import Icon from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
+import {AuthContext} from './AuthContext';
+import axios from 'axios';
+import Carousel from 'react-native-reanimated-carousel';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const ITEM_WIDTH = SCREEN_WIDTH * 0.85;
+const SPACING = 10;
+const SIDE_SPACING = (SCREEN_WIDTH - ITEM_WIDTH) / 6;
+
+const categories = [
+  {
+    name: 'Automation',
+    image: require('../src/assets/images/Automation.jpg'),
+    route: 'Automation',
+  },
+  {
+    name: 'Foundary',
+    image: require('../src/assets/images/foundary.jpg'),
+    route: 'Foundary',
+  },
+  {
+    name: 'Machinary',
+    image: require('../src/assets/images/Machinery.jpeg'),
+    route: 'Machinery',
+  },
+  {
+    name: 'CNC',
+    image: require('../src/assets/images/modelcnc.jpeg'),
+    route: 'CNC',
+  },
+  {
+    name: 'Textiles',
+    image: require('../src/assets/images/textiles.jpg'),
+    route: 'Textiles',
+  },
+  {
+    name: 'Fabrications',
+    image: require('../src/assets/images/fabrication.jpg'),
+    route: 'Fabrication',
+  },
+];
+
+const bestOffers = [
+  'Licious',
+  'Lenskart',
+  'IDFC First Bank',
+  'IDfc Bank',
+  'Amazon',
+  'Flipkart',
+];
+
+const data = new Array(10).fill({
+  image: require('../src/assets/images/FirstImage.jpg'),
+});
+
+const Landingpage = ({navigation}) => {
+  const {userData} = useContext(AuthContext);
+  const [profileImage, setProfileImage] = useState(null);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (!userData?.id) return;
+
+      try {
+        const response = await axios.get(
+          `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
+        );
+
+        if (response.data.success) {
+          const imageUrl = response.data.imageUrl;
+          const fullUrl = imageUrl.startsWith('http')
+            ? imageUrl
+            : `https://signpostphonebook.in/${imageUrl}`;
+          setProfileImage(`${fullUrl}?t=${new Date().getTime()}`);
+        }
+      } catch (error) {
+        console.error('Error fetching profile image:', error);
+      }
+    };
+
+    fetchProfileImage();
+  }, [userData?.id]);
+
+  const renderItem = ({item}) => (
+    <ImageBackground
+      source={item.image}
+      style={styles.bannerImage}
+      resizeMode="cover"
+      imageStyle={{borderRadius: 12}}
+    />
+  );
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Celfon5g</Text>
+        <TouchableOpacity
+          style={styles.profileIconContainer}
+          onPress={() => {
+            if (userData?.id) {
+              navigation.navigate('Profile');
+            } else {
+              Alert.alert(
+                'Login Required',
+                'You need to log in to view your Profile.',
+                [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+              );
+            }
+          }}>
+          {userData?.id && profileImage ? (
+            <Image
+              source={{uri: profileImage}}
+              style={styles.profileIcon}
+              resizeMode="cover"
+            />
+          ) : (
+            <MaterialIcons name="person" size={28} color="black" />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Search */}
+      <TouchableOpacity style={styles.searchContainer}>
+        <TextInput
+          placeholder="Firm/Product.."
+          onFocus={() => navigation.navigate('FeauturedSearch')}
+          style={styles.searchInput}
+        />
+        <Icon
+          name="search-outline"
+          size={20}
+          color="#555"
+          style={styles.searchIcon}
+        />
+      </TouchableOpacity>
+
+      {/* Reanimated Carousel */}
+      <Carousel
+        loop
+        autoPlay
+        autoPlayInterval={3000}
+        width={SCREEN_WIDTH}
+        height={200}
+        data={data}
+        scrollAnimationDuration={1000}
+        renderItem={renderItem}
+        mode="parallax"
+        modeConfig={{
+          parallaxScrollingScale: 0.9,
+          parallaxScrollingOffset: 50,
+        }}
+      />
+
+      <Text style={styles.sectionTitle}>Products</Text>
+      <FlatList
+        data={categories} // Or any other product array you have
+        numColumns={2}
+        keyExtractor={(item, index) => item.name + index}
+        scrollEnabled={false} // Since already inside ScrollView
+        renderItem={({item}) => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate(item.route)}
+            style={styles.productCard}>
+            <ImageBackground
+              source={item.image}
+              resizeMode="cover"
+              imageStyle={{borderRadius: 20}}
+              style={styles.productImage}></ImageBackground>
+            <Text style={styles.productName}>{item.name}</Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* Best Offers */}
+      <Text style={styles.sectionTitle}>Best Offers</Text>
+      <View style={styles.offersGrid}>
+        {bestOffers.map((offer, index) => (
+          <TouchableOpacity key={index} style={styles.offerCard}>
+            <Text style={styles.offerText}>{offer}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: '#fff', paddingHorizontal: 15},
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  welcomeText: {fontSize: 22, fontWeight: 'bold'},
+
+  searchContainer: {position: 'relative', marginVertical: 15},
+  searchInput: {
+    backgroundColor: '#f2f2f2',
+    borderRadius: 10,
+    padding: 10,
+    paddingLeft: 40,
+  },
+  searchIcon: {position: 'absolute', left: 10, top: 13},
+
+  sectionTitle: {fontSize: 18, fontWeight: 'bold', marginVertical: 10},
+  categoryItem: {alignItems: 'center', marginRight: 20},
+  categoryImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#eee',
+  },
+  categoryText: {marginTop: 5, fontSize: 12},
+
+  offersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  offerCard: {
+    backgroundColor: '#f2f5ff',
+    borderRadius: 12,
+    width: '48%',
+    paddingVertical: 20,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  offerText: {fontSize: 15, color: '#333', fontWeight: '500'},
+  bannerImage: {
+    width: ITEM_WIDTH,
+    height: 200,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  profileIconContainer: {
+    width: 30,
+    height: 30,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#deb887',
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 90,
+    zIndex: 1,
+  },
+});
+
+export default Landingpage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Landingpage------new one 
+
+
+import React from 'react';
+import { View, Text, StyleSheet, Dimensions, FlatList, StatusBar } from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ScrollView } from 'react-native-gesture-handler';
+
+const { width } = Dimensions.get('window');
+
+const carouselImages = [
+  require('../src/assets/images/FirstImage.jpg'),
+  require('../src/assets/images/FirstImage.jpg'),
+  require('../src/assets/images/FirstImage.jpg'),
+];
+
+const gridItems = [
+  { title: 'Daily Calendar', icon: 'calendar-today' },
+  { title: 'Rahu, Guru Time', icon: 'clock-time-four-outline' },
+  { title: 'Foreign Almanac', icon: 'earth' },
+  { title: 'Special Timings', icon: 'fire' },
+  { title: 'Auspicious Days', icon: 'star' },
+  { title: 'Greetings', icon: 'hand-heart' },
+  { title: 'Astrologer Book', icon: 'book-open-page-variant' },
+  { title: 'Astrology Search', icon: 'magnify' },
+];
+
+export default function HomeScreen() {
+  return (
+    <ScrollView style={styles.container}>
+      {/* Header with linear gradient */}
+      <LinearGradient colors={['#FF00FF', '#fffcb8']} style={styles.header}>
+        <Text style={styles.companyName}>Celfon5g</Text>
+        <Icon name="account-circle" size={30} color="#333" />
+      </LinearGradient>
+
+      <StatusBar backgroundColor="#ffe600" barStyle="dark-content" />
+
+      {/* Carousel */}
+      <View style={styles.carouselWrapper}>
+        <Carousel
+          loop
+          width={width}
+          height={230}
+          autoPlay
+          data={carouselImages}
+          scrollAnimationDuration={1000}
+          renderItem={({ item }) => (
+            <View style={styles.carouselImage}>
+              <Icon name="image" size={120} color="#ccc" />
+            </View>
+          )}
+        />
+      </View>
+
+      {/* Curved white arc */}
+      <View style={styles.curvedWhiteArc} />
+
+      {/* Grid section */}
+      <View style={styles.gridWrapper}>
+        <Text style={styles.sectionTitle}>Spiritual Features</Text>
+        <FlatList
+          data={gridItems}
+          numColumns={4}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={styles.grid}
+          renderItem={({ item }) => (
+            <View style={styles.gridItem}>
+              <Icon name={item.icon} size={40} color="#555" />
+              <Text style={styles.gridText}>{item.title}</Text>
+            </View>
+          )}
+        />
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  companyName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+  },
+  container: {
+    backgroundColor: '#fff',
+    flex: 1,
+  },
+  carouselWrapper: {
+    backgroundColor: '#ffe600',
+  },
+  carouselImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+  },
+  curvedWhiteArc: {
+    marginTop: -30,
+    height: 30,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
+  gridWrapper: {
+    backgroundColor: '#fff',
+    paddingTop: 10,
+    paddingHorizontal: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  grid: {
+    alignItems: 'center',
+  },
+  gridItem: {
+    width: width / 4 - 10,
+    alignItems: 'center',
+    marginVertical: 15,
+  },
+  gridText: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 6,
+  },
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+21-04-2025
+
+landing page 
+
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  ImageBackground,
+  Dimensions,
+  Alert,
+} from 'react-native';
+
+import Icon from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
+import {AuthContext} from './AuthContext';
+import axios from 'axios';
+import Carousel from 'react-native-reanimated-carousel';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const ITEM_WIDTH = SCREEN_WIDTH * 0.85;
+const SPACING = 10;
+const SIDE_SPACING = (SCREEN_WIDTH - ITEM_WIDTH) / 6;
+
+const categories = [
+  {
+    name: 'Automation',
+    image: require('../src/assets/images/Automation.jpg'),
+    route: 'Automation',
+  },
+  {
+    name: 'Foundary',
+    image: require('../src/assets/images/foundary.jpg'),
+    route: 'Foundary',
+  },
+  {
+    name: 'Machinary',
+    image: require('../src/assets/images/Machinery.jpeg'),
+    route: 'Machinery',
+  },
+  {
+    name: 'CNC',
+    image: require('../src/assets/images/modelcnc.jpeg'),
+    route: 'CNC',
+  },
+  {
+    name: 'Textiles',
+    image: require('../src/assets/images/textiles.jpg'),
+    route: 'Textiles',
+  },
+  {
+    name: 'Fabrications',
+    image: require('../src/assets/images/fabrication.jpg'),
+    route: 'Fabrication',
+  },
+];
+
+const bestOffers = [
+  'Licious',
+  'Lenskart',
+  'IDFC First Bank',
+  'IDfc Bank',
+  'Amazon',
+  'Flipkart',
+];
+
+const data = new Array(10).fill({
+  image: require('../src/assets/images/FirstImage.jpg'),
+});
+
+const Landingpage = ({navigation}) => {
+  const {userData} = useContext(AuthContext);
+  const [profileImage, setProfileImage] = useState(null);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (!userData?.id) return;
+
+      try {
+        const response = await axios.get(
+          `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
+        );
+
+        if (response.data.success) {
+          const imageUrl = response.data.imageUrl;
+          const fullUrl = imageUrl.startsWith('http')
+            ? imageUrl
+            : `https://signpostphonebook.in/${imageUrl}`;
+          setProfileImage(`${fullUrl}?t=${new Date().getTime()}`);
+        }
+      } catch (error) {
+        console.error('Error fetching profile image:', error);
+      }
+    };
+
+    fetchProfileImage();
+  }, [userData?.id]);
+
+  const renderItem = ({item}) => (
+    <ImageBackground
+      source={item.image}
+      style={styles.bannerImage}
+      resizeMode="cover"
+      imageStyle={{borderRadius: 12}}
+    />
+  );
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Celfon5g</Text>
+        <TouchableOpacity
+          style={styles.profileIconContainer}
+          onPress={() => {
+            if (userData?.id) {
+              navigation.navigate('Profile');
+            } else {
+              Alert.alert(
+                'Login Required',
+                'You need to log in to view your Profile.',
+                [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+              );
+            }
+          }}>
+          {userData?.id && profileImage ? (
+            <Image
+              source={{uri: profileImage}}
+              style={styles.profileIcon}
+              resizeMode="cover"
+            />
+          ) : (
+            <MaterialIcons name="person" size={28} color="black" />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Search */}
+      <TouchableOpacity style={styles.searchContainer}>
+        <TextInput
+          placeholder="Firm/Product.."
+          onFocus={() => navigation.navigate('FeauturedSearch')}
+          style={styles.searchInput}
+        />
+        <Icon
+          name="search-outline"
+          size={20}
+          color="#555"
+          style={styles.searchIcon}
+        />
+      </TouchableOpacity>
+
+      {/* Reanimated Carousel */}
+      <Carousel
+        loop
+        autoPlay
+        autoPlayInterval={3000}
+        width={SCREEN_WIDTH}
+        height={200}
+        data={data}
+        scrollAnimationDuration={1000}
+        renderItem={renderItem}
+        mode="parallax"
+        modeConfig={{
+          parallaxScrollingScale: 0.9,
+          parallaxScrollingOffset: 50,
+        }}
+      />
+
+      {/* Category */}
+      <Text style={styles.sectionTitle}>Category</Text>
+      <FlatList
+        horizontal
+        data={categories}
+        contentContainerStyle={{paddingBottom: 10}}
+        keyExtractor={(item, index) => item.name + index}
+        renderItem={({item}) => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate(item.route)}
+            style={styles.categoryItem}>
+            <ImageBackground
+              source={item.image}
+              resizeMode="cover"
+              imageStyle={{borderRadius: 30}}
+              style={styles.categoryImage}></ImageBackground>
+            <Text style={styles.productName}>{item.name}</Text>
+          </TouchableOpacity>
+        )}
+        showsHorizontalScrollIndicator={false}
+      />
+
+      {/* Best Offers */}
+      <Text style={styles.sectionTitle}>Best Offers</Text>
+      <View style={styles.offersGrid}>
+        {bestOffers.map((offer, index) => (
+          <TouchableOpacity key={index} style={styles.offerCard}>
+            <Text style={styles.offerText}>{offer}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: '#fff', paddingHorizontal: 15},
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  welcomeText: {fontSize: 22, fontWeight: 'bold'},
+
+  searchContainer: {position: 'relative', marginVertical: 15},
+  searchInput: {
+    backgroundColor: '#f2f2f2',
+    borderRadius: 10,
+    padding: 10,
+    paddingLeft: 40,
+  },
+  searchIcon: {position: 'absolute', left: 10, top: 13},
+
+  sectionTitle: {fontSize: 18, fontWeight: 'bold', marginVertical: 10},
+  categoryItem: {alignItems: 'center', marginRight: 20},
+  categoryImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#eee',
+  },
+  categoryText: {marginTop: 5, fontSize: 12},
+
+  offersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  offerCard: {
+    backgroundColor: '#f2f5ff',
+    borderRadius: 12,
+    width: '48%',
+    paddingVertical: 20,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  offerText: {fontSize: 15, color: '#333', fontWeight: '500'},
+  bannerImage: {
+    width: ITEM_WIDTH,
+    height: 200,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  profileIconContainer: {
+    width: 30,
+    height: 30,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#deb887',
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 90,
+    zIndex: 1,
+  },
+});
+
+export default Landingpage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+22-04-2025----------------------------------------
+
+
+
+import React, {useContext, useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Image,
+  ImageBackground,
+} from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+import LinearGradient from 'react-native-linear-gradient';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {AuthContext} from './AuthContext';
+import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
+
+const {width} = Dimensions.get('window');
+
+const carouselImages = [
+  require('../src/assets/images/FirstImage.jpg'),
+  require('../src/assets/images/SecondImage.jpg'),
+  require('../src/assets/images/ThirdImage.jpg'),
+  require('../src/assets/images/FourthImage.jpg'),
+  require('../src/assets/images/FifthImage.jpg'),
+  require('../src/assets/images/SixthImage.jpg'),
+  require('../src/assets/images/SeventhImage.jpg'),
+  require('../src/assets/images/EighthImage.jpg'),
+  require('../src/assets/images/NinthImage.jpg'),
+  require('../src/assets/images/TenthImage.jpg'),
+];
+
+const categories = [
+  {
+    name: 'Automation',
+    image: require('../src/assets/images/Automation.jpg'),
+    route: 'Automation',
+  },
+  {
+    name: 'Foundary',
+    image: require('../src/assets/images/foundary.jpg'),
+    route: 'Foundary',
+  },
+  {
+    name: 'Machinary',
+    image: require('../src/assets/images/Machinery.jpeg'),
+    route: 'Machinery',
+  },
+  {
+    name: 'CNC',
+    image: require('../src/assets/images/modelcnc.jpeg'),
+    route: 'CNC',
+  },
+  {
+    name: 'Textiles',
+    image: require('../src/assets/images/textiles.jpg'),
+    route: 'Textiles',
+  },
+  {
+    name: 'Fabrications',
+    image: require('../src/assets/images/fabrication.jpg'),
+    route: 'Fabrication',
+  },
+];
+
+const companyNames = [
+  'Company one',
+  'Company two',
+  'Company three',
+  'Company four',
+  'Company five',
+  'Company six',
+];
+
+const Landingpage = () => {
+  const {userData} = useContext(AuthContext);
+  const [profileImage, setProfileImage] = useState(null);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (!userData?.id) return;
+      try {
+        const response = await axios.get(
+          `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
+        );
+        if (response.data.success) {
+          const imageUrl = response.data.imageUrl;
+          const fullUrl = imageUrl.startsWith('http')
+            ? imageUrl
+            : `https://signpostphonebook.in/${imageUrl}`;
+          setProfileImage(`${fullUrl}?t=${new Date().getTime()}`);
+        }
+      } catch (error) {
+        console.error('Error fetching profile image:', error);
+      }
+    };
+
+    fetchProfileImage();
+  }, [userData?.id]);
+
+  return (
+    <ScrollView style={styles.container}>
+      <LinearGradient colors={['#FF00FF', '#fff']} style={styles.header}>
+        <Text style={styles.welcomeText}>Celfon5g</Text>
+        <TouchableOpacity
+          style={styles.profileIconContainer}
+          onPress={() => {
+            if (userData?.id) {
+              navigation.navigate('Profile');
+            } else {
+              Alert.alert(
+                'Login Required',
+                'You need to log in to view your Profile.',
+                [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+              );
+            }
+          }}>
+          {userData?.id && profileImage ? (
+            <Image
+              source={{uri: profileImage}}
+              style={styles.profileIcon}
+              resizeMode="cover"
+            />
+          ) : (
+            <MaterialIcons name="person" size={28} color="black" />
+          )}
+        </TouchableOpacity>
+      </LinearGradient>
+
+      <View style={styles.carouselWrapper}>
+        <Carousel
+          loop
+          width={width}
+          height={230}
+          autoPlay
+          data={carouselImages}
+          scrollAnimationDuration={1000}
+          renderItem={({item}) => (
+            <Image
+              source={item}
+              style={{width: '100%', height: '100%', resizeMode: 'cover'}}
+            />
+          )}
+        />
+      </View>
+
+   
+      <View style={styles.bodyWrapper}>
+
+        <View style={styles.gridWrapper}>
+          <Text style={styles.sectionTitle}>Products</Text>
+          <FlatList
+            data={categories}
+            numColumns={3}
+            keyExtractor={(item, index) => item.name + index}
+            columnWrapperStyle={{justifyContent: 'space-between'}}
+            contentContainerStyle={{paddingBottom: 20}}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                onPress={() => navigation.navigate(item.route)}
+                style={styles.categoryItem}>
+                <ImageBackground
+                  source={item.image}
+                  style={styles.categoryImage}
+                  imageStyle={{borderRadius: 30}}
+                />
+                <Text style={styles.productName}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+            scrollEnabled={false} 
+          />
+        </View>
+        <View style={styles.companiesSection}>
+          <Text style={styles.sectionTitle}>Companies A - Z</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.alphabetScroller}>
+            {Array.from({length: 26}, (_, i) =>
+              String.fromCharCode(65 + i),
+            ).map(letter => (
+              <TouchableOpacity key={letter} style={styles.letterButton}>
+                <Text style={styles.letterText}>{letter}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Placeholder grid for companies */}
+          <View style={styles.companiesGrid}>
+  {companyNames.map((companyName, index) => (
+    <View key={index} style={styles.companyCard}>
+      <Text style={styles.companyName}>{companyName}</Text>
+    </View>
+  ))}
+</View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#fff',
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+  },
+  profileIconContainer: {
+    borderRadius: 50,
+    padding: 4,
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 25,
+  },
+  carouselWrapper: {
+    backgroundColor: '#ffe600',
+  },
+  bodyWrapper: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -30,
+    paddingTop: 20,
+    paddingHorizontal: 12,
+ 
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+
+  },
+  
+  gridWrapper: {
+    marginTop: 10,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
+
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#333',
+    paddingLeft: 20,
+    paddingTop: 10,
+  },
+  categoryItem: {
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '30%',
+  },
+  categoryImage: {
+    width: 50,
+    height: 50,
+  },
+  productName: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#444',
+  },
+
+  //---coming companies---//
+
+  companiesSection: {
+    marginTop: 20,
+    paddingBottom: 20,
+  },
+
+  alphabetScroller: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+
+  letterButton: {
+    backgroundColor: '#f2f2f2',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+
+  letterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+  },
+
+  companiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+
+  companyCard: {
+    backgroundColor: '#fafafa',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    width: '47%',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+
+  companyName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+});
+
+export default Landingpage;
+
+
+
+
+
+
+
+
+
+
+
+ {/* <LinearGradient colors={['#FF00FF', '#fff']} style={styles.header}>
+        <Text style={styles.welcomeText}>Celfon5g</Text>
+        <TouchableOpacity
+          style={styles.profileIconContainer}
+          onPress={() => {
+            if (userData?.id) {
+              navigation.navigate('Profile');
+            } else {
+              Alert.alert(
+                'Login Required',
+                'You need to log in to view your Profile.',
+                [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+              );
+            }
+          }}>
+          {userData?.id && profileImage ? (
+            <Image
+              source={{uri: profileImage}}
+              style={styles.profileIcon}
+              resizeMode="cover"
+            />
+          ) : (
+            <MaterialIcons name="person" size={28} color="black" />
+          )}
+        </TouchableOpacity>
+      </LinearGradient> */}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+23-04-2025---------fixed header and products and companies
+
+import React, {useContext, useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Image,
+  TextInput,
+  Linking,
+  
+  ImageBackground,
+} from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+import LinearGradient from 'react-native-linear-gradient';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {AuthContext} from './AuthContext';
+import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// playstore
+
+const openPlayStoreLink = url => {
+  Linking.openURL(url).catch(err => {
+    console.error('Failed to open Play Store:', err);
+  });
+};
+
+const {width} = Dimensions.get('window');
+
+const categories = [
+  {
+    name: 'Automation',
+    image: require('../src/assets/images/Automation.jpg'),
+    route: 'Automation',
+  },
+  {
+    name: 'Foundary',
+    image: require('../src/assets/images/foundary.jpg'),
+    route: 'Foundary',
+  },
+  {
+    name: 'Machinary',
+    image: require('../src/assets/images/Machinery.jpeg'),
+    route: 'Machinery',
+  },
+  {
+    name: 'CNC',
+    image: require('../src/assets/images/modelcnc.jpeg'),
+    route: 'CNC',
+  },
+  {
+    name: 'Textiles',
+    image: require('../src/assets/images/textiles.jpg'),
+    route: 'Textiles',
+  },
+  {
+    name: 'Fabrications',
+    image: require('../src/assets/images/fabrication.jpg'),
+    route: 'Fabrication',
+  },
+];
+
+const companyNames = [
+  'Janatics',
+  'SunWater Supply',
+  'Ajith Associates',
+  'Fabtech',
+  'Raison Automation',
+  'MKS Foods',
+];
+
+
+const Landingpage = () => {
+  const {userData} = useContext(AuthContext);
+  const [profileImage, setProfileImage] = useState(null);
+  const navigation = useNavigation();
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          'https://signpostphonebook.in/client_fetch_for_new_database.php',
+        );
+        const jsonResponse = await response.json();
+        if (Array.isArray(jsonResponse)) {
+          const sortedData = jsonResponse.sort((a, b) => b.id - a.id);
+          setCompanies(sortedData);
+        } else {
+          Alert.alert('Error', 'Unexpected response from server.');
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to load data: ' + error.message);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (!userData?.id) return;
+      try {
+        const response = await axios.get(
+          `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
+        );
+        if (response.data.success) {
+          const imageUrl = response.data.imageUrl;
+          const fullUrl = imageUrl.startsWith('http')
+            ? imageUrl
+            : `https://signpostphonebook.in/${imageUrl}`;
+          setProfileImage(`${fullUrl}?t=${new Date().getTime()}`);
+        }
+      } catch (error) {
+        console.error('Error fetching profile image:', error);
+      }
+    };
+
+    fetchProfileImage();
+  }, [userData?.id]);
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.carouselWrapper}>
+        <Image
+          source={require('../src/assets/images/Clouds.png')}
+          style={{width: '100%', height: 230, resizeMode: 'cover'}}
+        />
+        <View style={styles.overlayHeader}>
+          <View style={styles.topRow}>
+            <Text style={styles.welcomeText}>
+              Welcome {userData.businessname || userData.person || 'Guest'}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.profileIconContainer}
+              onPress={() => {
+                if (userData?.id) {
+                  navigation.navigate('Profile');
+                } else {
+                  Alert.alert(
+                    'Login Required',
+                    'You need to log in to view your Profile.',
+                    [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+                  );
+                }
+              }}>
+              {userData?.id && profileImage ? (
+                <Image
+                  source={{uri: profileImage}}
+                  style={styles.profileIcon}
+                  resizeMode="cover"
+                />
+              ) : (
+                <MaterialIcons name="person" size={28} color="black" />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Bar aligned below */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              placeholder="Firm/Product.."
+              onFocus={() => navigation.navigate('FeauturedSearch')}
+              style={styles.searchInput}
+            />
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color="#555"
+              style={styles.searchIcon}
+            />
+          </View>
+
+          <View style={styles.centeredTextWrapper}>
+            <Text style={styles.centeredText}>Welcome to</Text>
+            <Text style={styles.brandTitle}>Celfon5g</Text>
+            <Text style={styles.tagline}>Empowering Industry</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.bodyWrapper}>
+        <View style={styles.gridWrapper}>
+          <Text style={styles.sectionTitle}>Products</Text>
+          <FlatList
+            data={categories}
+            numColumns={3}
+            keyExtractor={(item, index) => item.name + index}
+            columnWrapperStyle={{justifyContent: 'space-between'}}
+            contentContainerStyle={{paddingBottom: 20}}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                onPress={() => navigation.navigate(item.route)}
+                style={styles.categoryItem}>
+                <ImageBackground
+                  source={item.image}
+                  style={styles.categoryImage}
+                  imageStyle={{borderRadius: 30}}
+                />
+                <Text style={styles.productName}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+            scrollEnabled={false}
+          />
+        </View>
+
+        <View style={styles.companiesSection}>
+          <Text style={styles.sectionTitle}>Companies A - Z</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.alphabetScroller}>
+            {Array.from({length: 26}, (_, i) =>
+              String.fromCharCode(65 + i),
+            ).map(letter => (
+              <TouchableOpacity
+                key={letter}
+                style={styles.letterButton}
+                onPress={() => {
+                  const filtered = companies.filter(
+                    company =>
+                      company.businessname &&
+                      company.businessname.charAt(0).toLowerCase() ===
+                        letter.toLowerCase(),
+                  );
+
+                  navigation.navigate('AlphabeticalList', {
+                    selectedLetter: letter,
+                    filteredCompanies: filtered,
+                  });
+                }}>
+                <Text style={styles.letterText}>{letter}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <View style={styles.companiesGrid}>
+            {companyNames.map((companyName, index) => (
+              <View key={index} style={styles.companyCard}>
+                <Text style={styles.companyName}>{companyName}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* books */}
+
+        <View style={styles.booksCardRow}>
+          {/* Book 1 */}
+          <View style={styles.booksCardSmall}>
+            <ImageBackground
+              source={require('../src/assets/images/Book2024.jpg')}
+              style={styles.booksImage}
+              imageStyle={styles.booksImageRadius}>
+              <View style={styles.booksBadge}>
+                <Text style={styles.booksBadgeText}>1</Text>
+              </View>
+            </ImageBackground>
+            <View style={styles.booksContent}>
+              <Text style={styles.booksTitle}>Coimbatore 2024</Text>
+              <Text style={styles.booksDescription}>
+                This Coimbatore 2024 (21st Edition) Industrial Directory
+              </Text>
+              <TouchableOpacity
+                style={styles.booksButton}
+                onPress={() =>
+                  openPlayStoreLink(
+                    'https://play.google.com/store/books/details/Lion_Dr_Er_J_Shivakumaar_COIMBATORE_2024_Industria?id=kwgSEQAAQBAJ',
+                  )
+                }>
+                <Text style={styles.booksButtonText}>Free Now</Text>
+              </TouchableOpacity>
+              {/* <Text style={styles.booksPrice}>40.0 INR</Text>
+              <Text style={styles.booksOldPrice}>80</Text> */}
+            </View>
+          </View>
+
+          {/* Book 2 */}
+          <View style={styles.booksCardLarge}>
+            <ImageBackground
+              source={require('../src/assets/images/Book2025.jpg')}
+              style={styles.booksImage}
+              imageStyle={styles.booksImageRadius}>
+              <View style={styles.booksBadge}>
+                <Text style={styles.booksBadgeText}>2</Text>
+              </View>
+            </ImageBackground>
+            <View style={styles.booksContent}>
+              <Text style={styles.booksTitle}>Coimbatore 2025</Text>
+              <Text style={styles.booksDescription}>
+                This is a Preview Edition of Coimbatore 2025 Industrial
+                Directory
+              </Text>
+              <TouchableOpacity
+                style={styles.booksButton}
+                onPress={() =>
+                  openPlayStoreLink(
+                    'https://play.google.com/store/books/details/Lion_Dr_Er_J_Shivakumaar_COIMBATORE_2025_Industria?id=sCE6EQAAQBAJ',
+                  )
+                }>
+                <Text style={styles.booksButtonText}>Free trial</Text>
+              </TouchableOpacity>
+              {/* <Text style={styles.booksPrice}>40.0 INR</Text>
+              <Text style={styles.booksOldPrice}>80.0 INR</Text> */}
+            </View>
+          </View>
+
+          {/* Book 3 */}
+          <View style={styles.booksCardSmall}>
+            <ImageBackground
+              source={require('../src/assets/images/FirstImage.jpg')}
+              style={styles.booksImage}
+              imageStyle={styles.booksImageRadius}>
+              <View style={styles.booksBadge}>
+                <Text style={styles.booksBadgeText}>3</Text>
+              </View>
+            </ImageBackground>
+            <View style={styles.booksContent}>
+              <Text style={styles.booksTitle}>Coimbatore 2026</Text>
+              <Text style={styles.booksDescription}>
+                This Coimbatore 2026 Directory Releasing soon ...
+              </Text>
+              <TouchableOpacity style={styles.booksButton}>
+                <Text style={styles.booksButtonText}>Comming Soon</Text>
+              </TouchableOpacity>
+              {/* <Text style={styles.booksPrice}>00.0 INR</Text>
+              <Text style={styles.booksOldPrice}>00</Text> */}
+            </View>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#fff',
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  welcomeText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
+  },
+
+  profileIconContainer: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+   
+  },
+  profileIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    borderWidth: 5,
+    borderColor: '#ccc',
+    backgroundColor: '#fff',
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  overlayHeader: {
+    position: 'absolute',
+    top: 0,
+    width: '100%',
+    paddingTop: 25,
+    paddingHorizontal: 20,
+  },
+
+  centeredTextWrapper: {
+    alignItems: 'center',
+    marginTop: 1,
+    lineHeight: 20,
+  },
+
+  centeredText: {
+    fontSize: 16,
+
+    fontWeight: '400',
+    fontStyle: 'italic',
+  },
+
+  brandTitle: {
+    fontSize: 28,
+
+    fontWeight: '900',
+    fontFamily: 'serif',
+    letterSpacing: 2,
+  },
+
+  tagline: {
+    fontSize: 14,
+
+    marginTop: 4,
+  },
+
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    height: 40,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: {width: 0, height: 2},
+    shadowRadius: 4,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 5,
+    fontSize: 14,
+  },
+  searchIcon: {
+    marginLeft: 8,
+  },
+
+  bodyWrapper: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -20,
+    paddingTop: 20,
+    paddingHorizontal: 12,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+
+  gridWrapper: {
+    marginTop: 10,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
+
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#333',
+    paddingLeft: 20,
+    paddingTop: 10,
+  },
+  categoryItem: {
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '30%',
+  },
+  categoryImage: {
+    width: 50,
+    height: 50,
+  },
+  productName: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#444',
+  },
+
+  //---coming companies---//
+
+  companiesSection: {
+    marginTop: 20,
+    paddingBottom: 20,
+  },
+
+  alphabetScroller: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+
+  letterButton: {
+    backgroundColor: '#f2f2f2',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+
+  letterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+  },
+
+  companiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+
+  companyCard: {
+    backgroundColor: '#fafafa',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    width: '47%',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+
+  companyName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+
+  //books
+
+  booksCardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+
+    marginTop: 20,
+  },
+  booksCardSmall: {
+    width: 110,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  booksCardLarge: {
+    width: 140,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  booksImage: {
+    width: '100%',
+    height: 160,
+    justifyContent: 'flex-start',
+  },
+  booksImageRadius: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  booksBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: '#f57c00',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  booksBadgeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  booksContent: {
+    padding: 8,
+  },
+  booksTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  booksDescription: {
+    fontSize: 10,
+    color: '#555',
+    marginBottom: 6,
+  },
+  booksButton: {
+    backgroundColor: '#ff5722',
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  booksButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  booksPrice: {
+    color: '#e53935',
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  booksOldPrice: {
+    textDecorationLine: 'line-through',
+    color: '#999',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+});
+
+export default Landingpage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our Panels---------- old code 
+
+import React from 'react';
+import { View, Dimensions, Image, StyleSheet, Text } from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+
+const { width } = Dimensions.get('window');
+
+const carouselItems = [
+  { id: 1, image: require('../src/assets/images/FirstImage.jpg') },
+  { id: 2, image: require('../src/assets/images/FirstImage.jpg') },
+  { id: 3, image: require('../src/assets/images/FirstImage.jpg') },
+];
+
+const OurPanels = () => {
+  return (
+    <View style={styles.wrapper}>
+      <Text style={styles.heading}>Our Panels</Text>
+
+      <View style={styles.container}>
+        <Carousel
+          loop
+          width={width * 0.9}
+          height={200}
+          autoPlay
+          data={carouselItems}
+          scrollAnimationDuration={1000}
+          style={{ alignSelf: 'center' }}
+          renderItem={({ item }) => (
+            <Image
+              source={item.image}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          )}
+        />
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  wrapper: {
+    paddingTop: 20,
+    backgroundColor: '#f8f8f8',
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 10,
+    paddingHorizontal: 20,
+    color: '#333',
+  },
+  container: {
+    alignItems: 'center',
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+  },
+});
+
+export default OurPanels;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our Panels---------- new code 
+
+
+import React from 'react';
+import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+import LinearGradient from 'react-native-linear-gradient';
+
+const { width } = Dimensions.get('window');
+
+const FullPage = [
+  { id: 1, image: require('../src/assets/images/FirstImage.jpg') },
+  { id: 2, image: require('../src/assets/images/FirstImage.jpg') },
+  { id: 3, image: require('../src/assets/images/FirstImage.jpg') },
+];
+
+const OurPanel = () => {
+  return (
+    <LinearGradient colors={['#1c2331', '#1f2940']} style={styles.container}>
+      <Carousel
+        loop
+        width={width}
+        height={420}
+        autoPlay 
+        data={FullPage}
+        scrollAnimationDuration={1000}
+        mode="horizontal-stack"
+        pagingEnabled
+        modeConfig={{
+          snapDirection: 'left',
+          stackInterval: 30,
+          scaleInterval: 0.08,
+          opacityInterval: 0.2,
+        }}
+        style={styles.carousel}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Image source={item.image} style={styles.image} resizeMode="cover" />
+          </View>
+        )}
+      />
+
+      <Text style={styles.title}>Welcome to</Text>
+      <Text style={styles.brand}>AnimateReactNative.com</Text>
+      <Text style={styles.desc}>
+        An extensive collection of more than <Text style={styles.bold}>135+</Text> react native animations meticulously crafted and ready-to-use.
+      </Text>
+    </LinearGradient>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 80,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  carousel: {
+    marginBottom: 30,
+  },
+  card: {
+    borderRadius: 24,
+    backgroundColor: '#000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: width * 0.7,
+    height: 400,
+    borderRadius: 24,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 16,
+    opacity: 0.6,
+    marginBottom: 4,
+  },
+  brand: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  desc: {
+    color: '#ccc',
+    textAlign: 'center',
+    marginTop: 10,
+    marginHorizontal: 40,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  bold: {
+    fontWeight: '700',
+    color: '#fff',
+  },
+});
+
+export default OurPanel;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+profile Orignal code -
+
+import React, {useState, useContext, useEffect} from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import LinearGradient from 'react-native-linear-gradient';
+import axios from 'axios';
+
+import {AuthContext} from './AuthContext';
+
+const Profile = () => {
+  const [isOwner, setIsOwner] = useState(false);
+  const [isBuyer, setIsBuyer] = useState(false);
+  const [taskCount, setTaskCount] = useState(0);
+  const [referralCount, setReferralCount] = useState(0);
+  const [profileImage, setProfileImage] = useState(null);
+  const [membershipModalVisible, setMembershipModalVisible] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {userData, setUserData} = useContext(AuthContext);
+  const date = new Date().toISOString().split('T')[0];
+
+  const userId = userData?.id;
+
+  const checkIsOwner = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/check_shop_owner_id.php`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: userId}),
+        }
+      );
+      const result = await response.json();
+      if (result.success) {
+        setIsOwner(true);
+      } else {
+        setIsOwner(false);
+        checkIsBuyer();
+      }
+    } catch (error) {
+      console.log('Error checking owner:', error);
+    }
+  };
+
+  const checkIsBuyer = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/check_ice_cream_buyer.php`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: userId}),
+        }
+      );
+      const result = await response.json();
+      setIsBuyer(result.success);
+    } catch (error) {
+      console.log('Error checking buyer:', error);
+    }
+  };
+
+  const openMembershipModalHandler = () => {
+    setMembershipModalVisible(true);
+    checkIsOwner();
+  };
+
+  const closeMembershipModal = () => {
+    setMembershipModalVisible(false);
+  };
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (!userId) return;
+      try {
+        const response = await axios.get(
+          `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userId}`
+        );
+        if (response.data.success) {
+          const imageUrl = response.data.imageUrl.startsWith('http')
+            ? response.data.imageUrl
+            : `https://signpostphonebook.in/${response.data.imageUrl}`;
+          const finalUrl = `${imageUrl}?t=${Date.now()}`;
+          setProfileImage(finalUrl);
+          setUserData(prev => ({...prev, profileImage: imageUrl}));
+        }
+      } catch (error) {
+        console.error('Error fetching profile image:', error);
+      }
+    };
+
+    fetchProfileImage();
+  }, [userId, setUserData]);
+
+  const fetchUserData = async (userid, date, signal) => {
+    try {
+      if (!userid || !date) return null;
+      const response = await fetch(
+        `https://signpostphonebook.in/data_entry_details.php?userid=${userid}&date=${date}`,
+        {signal}
+      );
+      const data = await response.json();
+      if (data.status === 'success') {
+        return data.data;
+      } else {
+        return {count: 0};
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching user data:', error);
+      }
+      return null;
+    }
+  };
+
+  const fetchReferralCount = async () => {
+    if (!userData?.mobileno) return;
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/try_referrals_count.php?mobile=${encodeURIComponent(userData.mobileno)}`
+      );
+      const data = await response.text();
+      const match = data.match(/Total Referred: (\d+)/);
+      if (match) {
+        setReferralCount(parseInt(match[1], 10));
+      }
+    } catch (error) {
+      console.error('Failed to fetch referral count', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!userId || !date) return;
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      const data = await fetchUserData(userId, date, signal);
+      setIsLoading(false);
+
+      if (data) {
+        setTaskCount(data.count || 0);
+      } else {
+        setTaskCount(0);
+        setError('No data found');
+      }
+    };
+
+    loadData();
+    fetchReferralCount();
+
+    return () => controller.abort();
+  }, [userId, date]);
+
+  return (
+    <View style={styles.container}>
+      {/* HEADER */}
+      <LinearGradient colors={['#FF69B4', '#FFFFFF']} style={styles.header}>
+        <Image
+          source={{uri: profileImage}}
+          style={styles.profileImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.userName}>
+          {userData?.businessname || userData?.person || 'Your Name'}
+        </Text>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statsNumber}>{taskCount}</Text>
+            <Text style={styles.statsText}>Total Count</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statsNumber}>{referralCount}</Text>
+            <Text style={styles.statsText}>Referral Count</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* BODY */}
+      <ScrollView style={styles.infoSection}>
+        <View style={styles.infoRow}>
+          <Icon name="envelope" size={20} color="#666" />
+          <Text style={styles.infoText}>{userData.description || 'Description'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Icon name="cube" size={20} color="#666" />
+          <Text style={styles.infoText}>{userData.product || 'Product'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Icon name="map-marker" size={20} color="#1DA1F2" />
+          <Text style={styles.infoText}>
+            {userData.address || 'Address'}, {userData.city || 'City'}, {userData.pincode || 'Pincode'}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Icon name="phone" size={20} color="#1769FF" />
+          <Text style={styles.infoText}>{userData.mobileno || 'Mobile No'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Icon name="envelope" size={20} color="#4267B2" />
+          <Text style={styles.infoText}>{userData.email || 'Email'}</Text>
+        </View>
+      </ScrollView>
+
+      {/* MEMBERSHIP BUTTON */}
+      <View style={styles.fixedButtonContainer}>
+        <TouchableOpacity
+          style={styles.openModalButton}
+          onPress={openMembershipModalHandler}>
+          <Text style={styles.buttonText}>Membership Card</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* MEMBERSHIP MODAL */}
+      <Modal visible={membershipModalVisible} animationType="fade" transparent>
+        <View style={styles.overlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalheader}>
+              <Image
+                source={require('../src/assets/images/Logo_Phonebook.jpg')}
+                style={styles.logo}
+              />
+              <Text style={styles.modalheaderText}>Membership Card</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={closeMembershipModal}>
+                <Text style={styles.closeButtonText}>X</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* CARD CONTENT */}
+            <View style={styles.cardContent}>
+              <Image
+                source={{uri: profileImage}}
+                style={styles.memprofileImage}
+              />
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>
+                  {userData?.businessname || userData?.person}
+                </Text>
+
+                {isOwner && (
+                  <View style={styles.ownerBadge}>
+                    <Image
+                      source={require('../src/assets/images/owner_shop.png')}
+                      style={styles.ownerIcon}
+                    />
+                    <Text style={styles.ownerText}>Owner</Text>
+                  </View>
+                )}
+
+                {!isOwner && isBuyer && (
+                  <View style={styles.buyerIdBadge}>
+                    <Text style={styles.buyerIdText}>ID: {userData?.id}</Text>
+                  </View>
+                )}
+
+                <Text style={styles.addressText}>
+                  Address: {userData?.address || 'N/A'}, {userData?.city || 'N/A'}
+                </Text>
+                <Text style={styles.addressText}>
+                  Pincode: {userData?.pincode || 'N/A'}
+                </Text>
+              </View>
+            </View>
+
+            {/* FOOTER */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                This card is valid for 12 Months from the date of issue.
+              </Text>
+              <Text style={styles.footerAddress}>
+                46, Sidco Industrial Estate, Coimbatore - 641021
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: '#F8F9FA'},
+  header: {
+    backgroundColor: '#1E3CFF',
+    alignItems: 'center',
+    paddingVertical: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  backIcon: {position: 'absolute', left: 20, top: 15},
+  settingsIcon: {position: 'absolute', right: 20, top: 15},
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginTop: 10,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  userName: {color: '#fff', fontSize: 20, fontWeight: 'bold', marginTop: 10},
+
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  statBox: {alignItems: 'center', paddingHorizontal: 20},
+  statsNumber: {fontSize: 18, fontWeight: 'bold'},
+  statsText: {fontSize: 14},
+  divider: {
+    height: 30,
+    width: 2,
+    backgroundColor: 'black',
+    marginHorizontal: 10,
+  },
+
+  infoSection: {padding: 20},
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  infoText: {marginLeft: 15, fontSize: 16},
+
+  fixedButtonContainer: {position: 'absolute', bottom: 20, alignSelf: 'center'},
+
+  
+  openModalButton: {backgroundColor: '#ff4081', padding: 10, borderRadius: 5},
+  buttonText: {color: 'white', fontSize: 16, fontWeight: 'bold'},
+
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+
+
+  modalContainer: {
+    backgroundColor: 'white',
+    width: '100%',
+    borderRadius: 10,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  modalheader: {
+    backgroundColor: '#ff4581',
+    width: '100%',
+    flexDirection: 'row', // Arrange items in a row
+    alignItems: 'center', // Align items vertically
+    justifyContent: 'center', // Align items horizontally
+    padding: 10,
+  },
+
+  logo: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  modalheaderText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: 'white',
+    bottom: 25,
+
+    marginLeft: 10,
+    marginBottom: -50,
+  },
+  membershipText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 5,
+  },
+  cardContent: {
+    marginRight: -105,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  memprofileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  userInfo: {
+    marginLeft: 10,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  validText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'gray',
+    marginTop: 5,
+  },
+  addressText: {
+    width: '70%',
+    fontSize: 14,
+    color: 'gray',
+    marginTop: 5,
+    flexWrap: 'wrap',
+  },
+  footer: {
+    backgroundColor: '#ff4081',
+    width: '100%',
+    padding: 10,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: 'white',
+  },
+  footerAddress: {
+    fontSize: 12,
+    color: 'white',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    backgroundColor: 'white',
+    width: 25,
+    height: 25,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  //
+
+  ownerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  ownerIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 5,
+  },
+  ownerText: {
+    fontSize: 14,
+    color: 'green',
+    fontWeight: 'bold',
+  },
+  
+  buyerIdBadge: {
+    marginTop: 4,
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  buyerIdText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  
+});
+export default Profile;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------profile page - new design--------------------
+
+import React, {useState, useContext, useEffect} from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import LinearGradient from 'react-native-linear-gradient';
+import {AuthContext} from './AuthContext';
+import axios from 'axios';
+
+const Profile = () => {
+  const {userData, setUserData} = useContext(AuthContext);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isBuyer, setIsBuyer] = useState(false);
+  const [taskCount, setTaskCount] = useState(0);
+  const [referralCount, setReferralCount] = useState(0);
+  const [profileImage, setProfileImage] = useState(null);
+  const [membershipModalVisible, setMembershipModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const date = new Date().toISOString().split('T')[0];
+
+  const openMembershipModal = () => {
+    setMembershipModalVisible(true);
+    checkIsOwner();
+  };
+  const closeMembershipModal = () => setMembershipModalVisible(false);
+
+  const checkIsOwner = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/check_shop_owner_id.php`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: userData.id}),
+        }
+      );
+      const result = await response.json();
+      if (result.success) {
+        setIsOwner(true);
+      } else {
+        setIsOwner(false);
+        checkIsBuyer();
+      }
+    } catch (error) {
+      console.log('Owner Check Error:', error);
+    }
+  };
+
+  const checkIsBuyer = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/check_ice_cream_buyer.php`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: userData.id}),
+        }
+      );
+      const result = await response.json();
+      if (result.success) {
+        setIsBuyer(true);
+      } else {
+        setIsBuyer(false);
+      }
+    } catch (error) {
+      console.log('Buyer Check Error:', error);
+    }
+  };
+
+  const fetchProfileImage = async () => {
+    try {
+      const response = await axios.get(
+        `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`
+      );
+      if (response.data.success) {
+        const imageUrl = response.data.imageUrl.startsWith('http')
+          ? response.data.imageUrl
+          : `https://signpostphonebook.in/${response.data.imageUrl}`;
+        setProfileImage(imageUrl + `?t=${new Date().getTime()}`);
+      }
+    } catch (error) {
+      console.log('Profile Image Fetch Error:', error);
+    }
+  };
+
+  const fetchUserData = async (userid, date, signal) => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/data_entry_details.php?userid=${userid}&date=${date}`,
+        {signal}
+      );
+      const data = await response.json();
+      if (data.status === 'success') {
+        return data.data;
+      } else if (data.message === 'No record found.') {
+        return {count: 0};
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.log('User Data Fetch Error:', error.message);
+      }
+      return null;
+    }
+  };
+
+  const fetchReferralCount = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/try_referrals_count.php?mobile=${encodeURIComponent(
+          userData.mobileno
+        )}`
+      );
+      const data = await response.text();
+      const match = data.match(/Total Referred: (\d+)/);
+      if (match) {
+        setReferralCount(parseInt(match[1], 10));
+      }
+    } catch (error) {
+      console.log('Referral Count Fetch Error:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!userData?.id) return;
+    fetchProfileImage();
+  }, [userData]);
+
+  useEffect(() => {
+    if (!userData?.id || !date) return;
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const getData = async () => {
+      setIsLoading(true);
+      const data = await fetchUserData(userData.id, date, signal);
+      setIsLoading(false);
+      if (data) {
+        setTaskCount(data.count || 0);
+        fetchReferralCount();
+      } else {
+        setTaskCount(0);
+      }
+    };
+    getData();
+    return () => controller.abort();
+  }, [userData, date]);
+
+  if (!userData) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#FF69B4" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <LinearGradient colors={['#FF69B4', '#FFB6C1']} style={styles.header}>
+        <Image
+          source={{uri: profileImage}}
+          style={styles.profileImage}
+          resizeMode="cover"
+        />
+        <Text style={styles.name}>
+          {userData?.businessname || userData?.person || 'Your Name'}
+        </Text>
+        <Text style={styles.subtitle}>Profile Page</Text>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{taskCount}</Text>
+            <Text style={styles.statLabel}>Total Entries</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{referralCount}</Text>
+            <Text style={styles.statLabel}>Referrals</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Body */}
+      <ScrollView style={styles.body}>
+        <View style={styles.infoBox}>
+          <Icon name="user" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>{userData.description || 'Description'}</Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="cubes" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>{userData.product || 'Product'}</Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="map-marker" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>
+            {userData.address || 'Address'}, {userData.city || 'City'}, {userData.pincode || 'Pincode'}
+          </Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="phone" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>{userData.mobileno || 'Mobile No'}</Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="envelope" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>{userData.email || 'Email'}</Text>
+        </View>
+      </ScrollView>
+
+      {/* Button */}
+      <TouchableOpacity style={styles.membershipButton} onPress={openMembershipModal}>
+        <Text style={styles.buttonText}>View Membership Card</Text>
+      </TouchableOpacity>
+
+      {/* Modal */}
+      <Modal visible={membershipModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity style={styles.modalClose} onPress={closeMembershipModal}>
+              <Text style={{fontWeight: 'bold', fontSize: 18}}>X</Text>
+            </TouchableOpacity>
+
+            <Image
+              source={{uri: profileImage}}
+              style={styles.modalImage}
+              resizeMode="cover"
+            />
+            <Text style={styles.modalName}>
+              {userData?.businessname || userData?.person}
+            </Text>
+
+            {isOwner && (
+              <Text style={styles.badgeText}>Shop Owner</Text>
+            )}
+            {!isOwner && isBuyer && (
+              <Text style={styles.badgeText}>Buyer ID: {userData?.id}</Text>
+            )}
+
+            <Text style={styles.modalInfo}>Address: {userData.address || 'N/A'}, {userData.city || 'N/A'}</Text>
+            <Text style={styles.modalInfo}>Pincode: {userData.pincode || 'N/A'}</Text>
+
+            <Text style={styles.modalFooter}>Valid for 12 months from the date of issue</Text>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: '#fff'},
+  header: {
+    paddingVertical: 30,
+    alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  profileImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 3,
+    borderColor: '#fff',
+    marginBottom: 10,
+  },
+  name: {fontSize: 22, fontWeight: 'bold', color: '#fff'},
+  subtitle: {fontSize: 14, color: '#fff', marginBottom: 10},
+  statsContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  statBox: {
+    alignItems: 'center',
+    marginHorizontal: 20,
+  },
+  statNumber: {fontSize: 20, fontWeight: 'bold', color: '#fff'},
+  statLabel: {fontSize: 12, color: '#fff'},
+  body: {paddingHorizontal: 20, paddingTop: 10},
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  infoText: {marginLeft: 10, fontSize: 16, color: '#333'},
+  membershipButton: {
+    backgroundColor: '#FF69B4',
+    margin: 20,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 4,
+  },
+  buttonText: {color: '#fff', fontSize: 16, fontWeight: 'bold'},
+
+
+
+  //
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalClose: {
+    alignSelf: 'flex-end',
+  },
+  modalImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#FF69B4',
+    marginBottom: 10,
+  },
+  modalName: {fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 5},
+  badgeText: {fontSize: 14, color: '#FF69B4', marginVertical: 5},
+  modalInfo: {fontSize: 14, color: '#555', marginTop: 5},
+  modalFooter: {
+    marginTop: 15,
+    fontSize: 12,
+    color: '#aaa',
+    textAlign: 'center',
+  },
+  centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+});
+
+export default Profile;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import React, {useState, useContext, useEffect} from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  StyleSheet,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import LinearGradient from 'react-native-linear-gradient';
+import {AuthContext} from './AuthContext';
+import axios from 'axios';
+import {launchImageLibrary} from 'react-native-image-picker';
+import {PermissionsAndroid, Platform} from 'react-native';
+import * as Animatable from 'react-native-animatable';
+
+const Profile = () => {
+  const {userData, setUserData} = useContext(AuthContext);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isBuyer, setIsBuyer] = useState(false);
+  const [taskCount, setTaskCount] = useState(0);
+  const [referralCount, setReferralCount] = useState(0);
+  const [profileImage, setProfileImage] = useState(null);
+  const [membershipModalVisible, setMembershipModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const date = new Date().toISOString().split('T')[0];
+  const defaultImage = 'https://signpostphonebook.in/default_profile.png';
+
+  const [buyerId, setBuyerId] = useState('');
+  const [soldBuyerId, setSoldBuyerId] = useState(null); // Prevent duplicate ID use
+
+  const [isVerified, setIsVerified] = useState(false);
+  const [hasTriedVerification, setHasTriedVerification] = useState(false);
+  const [isSaleSuccessful, setIsSaleSuccessful] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const openMembershipModal = () => {
+    setMembershipModalVisible(true);
+    checkIsOwner();
+  };
+  const closeMembershipModal = () => setMembershipModalVisible(false);
+
+  const checkIsOwner = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/check_shop_owner_id.php`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: userData.id}),
+        },
+      );
+      const result = await response.json();
+      if (result.success) {
+        setIsOwner(true);
+      } else {
+        setIsOwner(false);
+        checkIsBuyer();
+      }
+    } catch (error) {
+      console.log('Owner Check Error:', error);
+    }
+  };
+
+  const checkIsBuyer = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/check_ice_cream_buyer.php`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: userData.id}),
+        },
+      );
+      const result = await response.json();
+      if (result.success) {
+        setIsBuyer(true);
+      } else {
+        setIsBuyer(false);
+      }
+    } catch (error) {
+      console.log('Buyer Check Error:', error);
+    }
+  };
+
+  const fetchProfileImage = async () => {
+    try {
+      const response = await axios.get(
+        `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
+      );
+      if (response.data.success) {
+        const imageUrl = response.data.imageUrl.startsWith('http')
+          ? response.data.imageUrl
+          : `https://signpostphonebook.in/${response.data.imageUrl}`;
+        setProfileImage(imageUrl + `?t=${new Date().getTime()}`);
+      }
+    } catch (error) {
+      console.log('Profile Image Fetch Error:', error);
+    }
+  };
+
+  const changeProfileImage = async () => {
+    const hasPermission = await requestGalleryPermission();
+    if (!hasPermission) {
+      console.log('Permission denied');
+      return;
+    }
+
+    const options = {
+      mediaType: 'photo',
+      selectionLimit: 1, // only 1 image
+      includeBase64: false, // no base64 needed
+    };
+
+    try {
+      const response = await launchImageLibrary(options);
+
+      console.log('Image Picker Response:', response);
+
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.error('ImagePicker Error:', response.errorMessage);
+      } else if (response.assets && response.assets.length > 0) {
+        const selectedImage = response.assets[0];
+        console.log('Selected Image:', selectedImage);
+        // Do whatever you want with selectedImage.uri
+      }
+    } catch (error) {
+      console.error('Error launching image library:', error);
+    }
+  };
+
+  const requestGalleryPermission = async () => {
+    if (Platform.OS === 'android') {
+      if (Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } else {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+    }
+    return true;
+  };
+
+  const fetchUserData = async (userid, date, signal) => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/data_entry_details.php?userid=${userid}&date=${date}`,
+        {signal},
+      );
+      const data = await response.json();
+      if (data.status === 'success') {
+        return data.data;
+      } else if (data.message === 'No record found.') {
+        return {count: 0};
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.log('User Data Fetch Error:', error.message);
+      }
+      return null;
+    }
+  };
+
+  const fetchReferralCount = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/try_referrals_count.php?mobile=${encodeURIComponent(
+          userData.mobileno,
+        )}`,
+      );
+      const data = await response.text();
+      const match = data.match(/Total Referred: (\d+)/);
+      if (match) {
+        setReferralCount(parseInt(match[1], 10));
+      }
+    } catch (error) {
+      console.log('Referral Count Fetch Error:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!userData?.id) return;
+    fetchProfileImage();
+  }, [userData]);
+
+  useEffect(() => {
+    if (!userData?.id || !date) return;
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const getData = async () => {
+      setIsLoading(true);
+      const data = await fetchUserData(userData.id, date, signal);
+      setIsLoading(false);
+      if (data) {
+        setTaskCount(data.count || 0);
+        fetchReferralCount();
+      } else {
+        setTaskCount(0);
+      }
+    };
+    getData();
+    return () => controller.abort();
+  }, [userData, date]);
+
+  if (!userData) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#FF69B4" />
+      </View>
+    );
+  }
+
+  const handleVerifyClick = () => {
+    if (!buyerId.trim()) {
+      alert('Please enter the Customer ID.');
+      return;
+    }
+
+    setHasTriedVerification(true); // <-- Mark that the verification was attempted
+    console.log('Verifying Customer ID:', buyerId); // Debugging line
+    verifyIsvalidCustomer();
+  };
+
+  const verifyIsvalidCustomer = async () => {
+    setIsVerifying(true);
+    setIsVerified(false); // Reset before trying
+  
+    try {
+      const response = await fetch(
+        'https://signpostphonebook.in/icecream/validate_buyer.php',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ buyer_id: buyerId }),
+        },
+      );
+  
+      const result = await response.json();
+      console.log('API Response:', result);
+  
+      if (result.success) {
+        console.log('Valid Customer');
+        setIsVerified(true); // ✅
+      } else {
+        console.log('Invalid Customer');
+        setIsVerified(false); // ❌
+      }
+    } catch (error) {
+      console.log('Verification error:', error);
+      setIsVerified(false);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+  
+
+  const iceCreamTransaction = async () => {
+    try {
+      const response = await fetch(
+        `https://signpostphonebook.in/icecream/transaction_details.php`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customerid: buyerId,
+            userid: userData.id,
+            username: userData.businessname || userData.person,
+          }),
+        },
+      );
+
+      const result = await response.json();
+      if (result.status) {
+        console.log('Ice cream sold successfully');
+        setIsSaleSuccessful(true);
+        setSoldBuyerId(buyerId); // Save last sold ID
+        setBuyerId(''); // Reset input
+        setIsVerified(false);
+        setHasTriedVerification(false);
+      } else {
+        console.log('Transaction failed');
+      }
+    } catch (error) {
+      console.log('Transaction error:', error);
+    }
+  };
+
+  const handleSoldSubmit = () => {
+    if (!isVerified) return;
+    iceCreamTransaction();
+  };
+
+  useEffect(() => {
+    if (hasTriedVerification) {
+      const timer = setTimeout(() => {
+        setHasTriedVerification(false);
+      }, 3000); // hide after 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [hasTriedVerification]);
+  
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <LinearGradient colors={['#FF69B4', '#FFB6C1']} style={styles.header}>
+        {/* Profile Image with Touchable */}
+        <View style={styles.profileImageWrapper}>
+          <Image
+            source={{uri: profileImage || defaultImage}}
+            style={styles.profileImage}
+            resizeMode="cover"
+          />
+
+          {/* Separate TouchableOpacity JUST for camera icon */}
+          <TouchableOpacity
+            onPress={changeProfileImage}
+            style={styles.cameraIconWrapper}>
+            <Icon name="camera" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* User Name */}
+        <Text style={styles.name}>
+          {userData?.businessname || userData?.person || 'Your Name'}
+        </Text>
+
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{taskCount}</Text>
+            <Text style={styles.statLabel}>Total Entries</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{referralCount}</Text>
+            <Text style={styles.statLabel}>Referrals</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Body */}
+      <ScrollView style={styles.body}>
+        <View style={styles.infoBox}>
+          <Icon name="user" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>
+            {userData.description || 'Description'}
+          </Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="cubes" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>{userData.product || 'Product'}</Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="map-marker" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>
+            {userData.address || 'Address'}, {userData.city || 'City'},{' '}
+            {userData.pincode || 'Pincode'}
+          </Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="phone" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>
+            {userData.mobileno || 'Mobile No'}
+          </Text>
+        </View>
+        <View style={styles.infoBox}>
+          <Icon name="envelope" size={20} color="#FF69B4" />
+          <Text style={styles.infoText}>{userData.email || 'Email'}</Text>
+        </View>
+      </ScrollView>
+
+      {/* Button */}
+      <TouchableOpacity
+        style={styles.membershipButton}
+        onPress={openMembershipModal}>
+        <Text style={styles.buttonText}>View Membership Card</Text>
+      </TouchableOpacity>
+
+      {/* Modal */}
+
+      <Modal visible={membershipModalVisible} animationType="fade" transparent>
+        <View style={styles.overlay}>
+          <View style={styles.modalContainer}>
+            {/* HEADER */}
+            <View style={styles.modalheader}>
+              <Image
+                source={require('../src/assets/images/Logo_Phonebook.jpg')}
+                style={styles.logo}
+              />
+              <Text style={styles.modalheaderText}>Membership Card</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={closeMembershipModal}>
+                <Text>X</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* CARD CONTENT */}
+            <View style={styles.cardContent}>
+              <Image
+                source={{uri: profileImage}}
+                style={styles.memprofileImage}
+              />
+
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>
+                  Name : {userData?.businessname || userData?.person}
+                </Text>
+
+                {isBuyer && !isOwner && (
+                  <View style={styles.buyerIdBadge}>
+                    <Text style={styles.buyerIdText}>ID: {userData?.id}</Text>
+                  </View>
+                )}
+
+                <Text style={styles.addressText}>
+                  Address: {userData?.address || 'N/A'},{' '}
+                  {userData?.city || 'N/A'}
+                </Text>
+
+                <Text style={styles.addressText}>
+                  Pincode: {userData?.pincode || 'N/A'}
+                </Text>
+              </View>
+
+              {isOwner && (
+                <View style={styles.ownerBadge}>
+                  <Image
+                    source={require('../src/assets/images/ice_cream_cone.png')}
+                    style={{width: 100, height: 100, marginTop: 5}}
+                  />
+                </View>
+              )}
+            </View>
+
+            {/* FOOTER */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                This card is valid for 12 Months from the date of issue.
+              </Text>
+              <Text style={styles.footerAddress}>
+                46, Sidco Industrial Estate, Coimbatore - 641021
+              </Text>
+            </View>
+
+            {/* Input & Buttons */}
+            {isOwner && (
+              <View style={styles.sellingBoxVertical}>
+                <TextInput
+                  placeholder="Enter Customer ID"
+                  value={buyerId}
+                  onChangeText={text => {
+                    setBuyerId(text);
+                    setIsVerified(false);        // Reset verification status
+                    setHasTriedVerification(false); // Reset tried status to clear animation
+                    setIsSaleSuccessful(false);  // Reset sale success
+                  }}
+                  
+                  style={styles.inputFull}
+                  editable={true}
+                />
+
+                {hasTriedVerification && (
+                  <Animatable.View
+                    animation={isVerified ? 'bounceIn' : 'shake'}
+                    duration={800}
+                    style={{
+                      marginVertical: 10,
+                      padding: 10,
+                      borderRadius: 8,
+                      backgroundColor: isVerified ? '#D4EDDA' : '#F8D7DA',
+                    }}>
+                    <Text
+                      style={{
+                        textAlign: 'center',
+                        color: isVerified ? '#155724' : '#721C24',
+                        fontWeight: 'bold',
+                      }}>
+                      {isVerified
+                        ? '✅ ID is Verified'
+                        : '❌ ID is Not Verified'}
+                    </Text>
+                  </Animatable.View>
+                )}
+
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    onPress={handleVerifyClick}
+                    disabled={isVerifying || isVerified || isSaleSuccessful}
+                    style={[
+                      styles.actionButton,
+                      {
+                        backgroundColor: isSaleSuccessful
+                          ? '#ccc'
+                          : isVerified
+                          ? '#4CAF50'
+                          : '#FF69B4',
+                      },
+                    ]}>
+                    <Text style={styles.buttonText}>
+                      {isVerifying
+                        ? 'Verifying...'
+                        : isVerified
+                        ? 'Verified'
+                        : 'Verify'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleSoldSubmit}
+                    disabled={!isVerified || isSaleSuccessful}
+                    style={[
+                      styles.actionButton,
+                      {
+                        backgroundColor:
+                          !isVerified || isSaleSuccessful ? '#ccc' : '#FF69B4',
+                      },
+                    ]}>
+                    <Text style={styles.buttonText}>
+                      {isSaleSuccessful ? 'Sold' : 'Sell'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    paddingVertical: 30,
+    alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 10,
+  },
+
+  profileImageWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+
+  cameraIconWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    right: 10,
+    backgroundColor: '#FF69B4',
+    borderRadius: 20,
+    padding: 5,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+
+  name: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 10,
+  },
+
+  statBox: {
+    alignItems: 'center',
+  },
+
+  statNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+
+  statLabel: {
+    fontSize: 12,
+    color: '#fff',
+  },
+
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  infoText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  membershipButton: {
+    backgroundColor: '#FF69B4',
+    margin: 20,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  //
+
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+
+  modalContainer: {
+    backgroundColor: 'white',
+    width: '100%',
+    borderRadius: 10,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  modalheader: {
+    backgroundColor: '#ff4581',
+    width: '100%',
+    flexDirection: 'row', // Arrange items in a row
+    alignItems: 'center', // Align items vertically
+    justifyContent: 'center', // Align items horizontally
+    padding: 10,
+  },
+
+  logo: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  modalheaderText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: 'white',
+    bottom: 25,
+
+    marginLeft: 10,
+    marginBottom: -50,
+  },
+  membershipText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 5,
+  },
+  cardContent: {
+    marginRight: -105,
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative', // <-- ADD THIS
+  },
+
+  memprofileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  userInfo: {
+    marginLeft: 10,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  validText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'gray',
+    marginTop: 5,
+  },
+  addressText: {
+    width: '70%',
+    fontSize: 14,
+    marginTop: 5,
+    flexWrap: 'wrap',
+  },
+  footer: {
+    backgroundColor: '#ff4081',
+    width: '100%',
+    padding: 10,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: 'white',
+  },
+  footerAddress: {
+    fontSize: 12,
+    color: 'white',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    backgroundColor: 'white',
+    width: 25,
+    height: 25,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  //
+
+  ownerBadge: {
+    position: 'absolute',
+    right: 100,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  ownerIcon: {
+    width: 60,
+    height: 60,
+  },
+
+  ownerText: {
+    fontSize: 14,
+    color: 'green',
+    fontWeight: 'bold',
+  },
+
+  buyerIdBadge: {
+    marginTop: 4,
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  buyerIdText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+
+  ///
+  sellingBoxVertical: {
+    paddingHorizontal: 10,
+    marginTop: 10,
+  },
+
+  inputFull: {
+    height: 42,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+  },
+
+ 
+
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    width: '80%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+
+  actionButton: {
+    flex: 0.48,
+    height: 42,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+});
+
+export default Profile;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+settings page
+const Settings = ({navigation}) => {
+  const {user, userData, logout} = useContext(AuthContext);
+
+  // Check if user is logged in
+  const isLoggedIn = user !== '';
+  const displayName = isLoggedIn
+    ? userData.businessname || userData.person
+    : 'Guest User';
+
+  // Define the mobile number of the admin and shop owner
+  const adminMobileNumbers = ['6383965890', '8344508070', '9843657564', '6383463820']; // Change this to the actual admin number
+  const shopOwnerMobileNumber = ['8300705411', '6383463820']; // Shop owner's number
+
+  // Check if the logged-in user is an admin
+  const isAdmin = isLoggedIn && adminMobileNumbers.includes(userData.mobileno);
+
+  // Check if the logged-in user is the shop owner
+  const isShopOwner = isLoggedIn && userData.mobileno === shopOwnerMobileNumber;
+
+  // Function to show logout confirmation
+  const confirmLogout = () => {
+    Alert.alert('Logout Confirmation', 'Do you really want to log out?', [
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'OK', onPress: () => logout(navigation)},
+    ]);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* General Section */}
+      <Text style={styles.sectionTitle}>GENERAL</Text>
+      {isLoggedIn && (
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('Account')}>
+          <Icon name="person-outline" size={24} color="#aa336a" />
+          <Text style={styles.optionText}>Account</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('Notifications')}>
+        <Icon name="notifications-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Notifications</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('Coupons')}>
+        <Icon name="gift-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Coupons</Text>
+      </TouchableOpacity>
+
+      {/* Show Admin Page Option for Admin Users */}
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('AdminPage')}>
+          <Icon name="settings-outline" size={24} color="red" />
+          <Text style={[styles.optionText, {color: 'red'}]}>Admin Page</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Show Ice Cream Transaction Page for Shop Owner */}
+      {isShopOwner && (
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('IceCreamTransaction')}>
+          <Icon name="ice-cream-outline" size={24} color="blue" />
+          <Text style={[styles.optionText, {color: 'blue'}]}>Ice-Cream Transactions</Text>
+        </TouchableOpacity>
+      )}
+
+      {isLoggedIn && (
+        <TouchableOpacity style={styles.option} onPress={confirmLogout}>
+          <Icon name="log-out-outline" size={24} color="#aa336a" />
+          <Text style={[styles.optionText, {color: 'red'}]}>Logout</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Feedback Section */}
+      <Text style={styles.sectionTitle}>FEEDBACK</Text>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('ReportBug')}>
+        <Icon name="alert-circle-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Report a Bug</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('SendFeedback')}>
+        <Icon name="send-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Send Feedback</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('UserGuide')}>
+        <Icon name="book-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>User Guide</Text>
+      </TouchableOpacity>
+
+      {/* Show Login & Sign Up if not logged in */}
+      {!isLoggedIn && (
+        <View>
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={() => navigation.navigate('Login')}>
+            <Icon name="log-in-outline" size={24} color="white" />
+            <Text style={styles.authText}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={() => navigation.navigate('Signup')}>
+            <Icon name="person-add-outline" size={24} color="white" />
+            <Text style={styles.authText}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <Text style={styles.sectionTitle}>FOLLOW US</Text>
+      <View style={styles.socialContainer}>
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://instagram.com/yourprofile')}>
+          <Icon
+            name="logo-instagram"
+            size={30}
+            color="#C13584"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://facebook.com/yourprofile')}>
+          <Icon
+            name="logo-facebook"
+            size={30}
+            color="#3b5998"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            Linking.openURL('https://linkedin.com/in/yourprofile')
+          }>
+          <Icon
+            name="logo-linkedin"
+            size={30}
+            color="#0077B5"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            Linking.openURL('https://linkedin.com/in/yourprofile')
+          }>
+          <Icon
+            name="logo-youtube"
+            size={30}
+            color="#FF0000"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.version}>Android version 1.0 </Text>
+    </ScrollView>
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+settings page -orignial code
+
+import {useContext} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Linking,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {AuthContext} from './AuthContext';
+
+const Settings = ({navigation}) => {
+  const {user, userData, logout} = useContext(AuthContext);
+
+  // Check if user is logged in
+  const isLoggedIn = user !== '';
+  const displayName = isLoggedIn
+    ? userData.businessname || userData.person
+    : 'Guest User';
+
+  // Define the mobile number of the admin
+  const adminMobileNumbers = ['6383965890', '9843657564', '8344508070']; // Change this to the actual admin number
+
+  // Check if the logged-in user is an admin
+  const isAdmin = isLoggedIn && adminMobileNumbers.includes(userData.mobileno);
+
+  // Function to show logout confirmation
+  const confirmLogout = () => {
+    Alert.alert('Logout Confirmation', 'Do you really want to log out?', [
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'OK', onPress: () => logout(navigation)},
+    ]);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* General Section */}
+      <Text style={styles.sectionTitle}>GENERAL</Text>
+      {isLoggedIn && (
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('Account')}>
+          <Icon name="person-outline" size={24} color="#aa336a" />
+          <Text style={styles.optionText}>Account</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('Notifications')}>
+        <Icon name="notifications-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Notifications</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('Coupons')}>
+        <Icon name="gift-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Coupons</Text>
+      </TouchableOpacity>
+
+      {/* Show Admin Page Option for Admin Users */}
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('AdminPage')}>
+          <Icon name="settings-outline" size={24} color="red" />
+          <Text style={[styles.optionText, {color: 'red'}]}>Admin Page</Text>
+        </TouchableOpacity>
+      )}
+
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('Icecream')}>
+          <Icon name="ice-cream-outline" size={24} color="red" />
+          <Text style={[styles.optionText, {color: 'red'}]}>Icecream</Text>
+        </TouchableOpacity>
+      )}
+
+      {isLoggedIn && (
+        <TouchableOpacity style={styles.option} onPress={confirmLogout}>
+          <Icon name="log-out-outline" size={24} color="#aa336a" />
+          <Text style={[styles.optionText, {color: 'red'}]}>Logout</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Feedback Section */}
+      <Text style={styles.sectionTitle}>FEEDBACK</Text>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('ReportBug')}>
+        <Icon name="alert-circle-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Report a Bug</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('SendFeedback')}>
+        <Icon name="send-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>Send Feedback</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.option}
+        onPress={() => navigation.navigate('UserGuide')}>
+        <Icon name="book-outline" size={24} color="#aa336a" />
+        <Text style={styles.optionText}>User Guide</Text>
+      </TouchableOpacity>
+
+      {/* Show Login & Sign Up if not logged in */}
+      {!isLoggedIn && (
+        <View>
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={() => navigation.navigate('Login')}>
+            <Icon name="log-in-outline" size={24} color="white" />
+            <Text style={styles.authText}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={() => navigation.navigate('Signup')}>
+            <Icon name="person-add-outline" size={24} color="white" />
+            <Text style={styles.authText}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <Text style={styles.sectionTitle}>FOLLOW US</Text>
+      <View style={styles.socialContainer}>
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://instagram.com/yourprofile')}>
+          <Icon
+            name="logo-instagram"
+            size={30}
+            color="#C13584"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://facebook.com/yourprofile')}>
+          <Icon
+            name="logo-facebook"
+            size={30}
+            color="#3b5998"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            Linking.openURL('https://linkedin.com/in/yourprofile')
+          }>
+          <Icon
+            name="logo-linkedin"
+            size={30}
+            color="#0077B5"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            Linking.openURL('https://linkedin.com/in/yourprofile')
+          }>
+          <Icon
+            name="logo-youtube"
+            size={30}
+            color="#FF0000"
+            style={styles.socialIcon}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.version}>Android version 1.0 </Text>
+
+      <Text></Text>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F8F8',
+  },
+  sectionTitle: {
+    marginTop: 20,
+    marginBottom: 10,
+    marginLeft: 20,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#aa336a',
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    elevation: 3,
+  },
+  optionText: {
+    fontSize: 16,
+    marginLeft: 10,
+    color: '#aa336a',
+  },
+  authButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#aa336a',
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 20,
+    marginTop: 10,
+  },
+  authText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    marginLeft: 10,
+  },
+
+  version: {
+    textAlign: 'center',
+    color: 'gray',
+    marginTop: 20,
+  },
+  socialContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginVertical: 20,
+  },
+  socialIcon: {
+    marginHorizontal: 10,
+  },
+});
+
+export default Settings;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+icecream page orignal code 
+
+import React, {useContext, useEffect, useState} from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {AuthContext} from './AuthContext';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+const Icecream = () => {
+  const {user} = useContext(AuthContext);
+  const navigation = useNavigation();
+
+  const [shopData, setShopData] = useState([]); // Data for Transaction Table
+  const [ownerData, setOwnerData] = useState([]); // Data for Show Owner Table
+  const [loading, setLoading] = useState(true);
+  const [isTransactionExpanded, setIsTransactionExpanded] = useState(false);
+  const [isOwnerExpanded, setIsOwnerExpanded] = useState(false);
+
+  const components = [
+    {
+      id: 1,
+      name: 'Add Buyer',
+      image: require('../src/assets/images/Buyer.png'),
+      route: 'BuyerInformation',
+    },
+    {
+      id: 2,
+      name: 'Add Shop Owner',
+      image: require('../src/assets/images/Shop.png'),
+      route: 'ShopOwnerInformation',
+    },
+  ];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch data for transaction table
+        const responseTransaction = await fetch(
+          'https://signpostphonebook.in/icecream/fetch_ice_cream_transaction.php',
+        );
+        const jsonTransaction = await responseTransaction.json();
+        if (jsonTransaction.success) {
+          setShopData(jsonTransaction.data);
+        } else {
+          Alert.alert(
+            'Error',
+            jsonTransaction.message || 'Failed to fetch data',
+          );
+        }
+
+        // Fetch data for show owner table
+        const responseOwner = await fetch(
+          'https://signpostphonebook.in/icecream/fetch_shop_owner_details.php', // Different API URL
+        );
+        const jsonOwner = await responseOwner.json();
+        if (jsonOwner.success) {
+          setOwnerData(jsonOwner.data);
+        } else {
+          Alert.alert('Error', jsonOwner.message || 'Failed to fetch data');
+        }
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Error', 'Network request failed');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const renderButtons = () =>
+    components.map(item => (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.item}
+        onPress={() => {
+          if (user) {
+            navigation.navigate(item.route);
+          } else {
+            Alert.alert('Login Required', 'Please login to view this item.');
+            navigation.navigate('Login');
+          }
+        }}>
+        <View style={styles.avatarContainer}>
+          <Image source={item.image} style={styles.avatar} />
+        </View>
+        <View style={styles.nameContainer}>
+          <Text style={styles.name}>{item.name}</Text>
+        </View>
+        <Icon name="chevron-forward" size={24} color="#666" />
+      </TouchableOpacity>
+    ));
+
+  return (
+    <SafeAreaView style={{flex: 1}}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Button Section */}
+        <Text style={styles.listHeadLine}>Icecream Specials</Text>
+        {renderButtons()}
+
+        {/* Transaction Table Section */}
+        <TouchableOpacity
+          onPress={() => setIsTransactionExpanded(!isTransactionExpanded)}>
+          <Text style={[styles.listHeadLine, {paddingTop: 20}]}>
+            Transaction Table
+          </Text>
+          <Icon
+            name={isTransactionExpanded ? 'chevron-up' : 'chevron-down'}
+            size={24}
+            color="#666"
+            style={styles.listHeadLineicon}
+          />
+        </TouchableOpacity>
+
+        {/* Transaction Table Body */}
+        {isTransactionExpanded && (
+          <>
+            {/* Table Header */}
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              <Text style={styles.tableCell}>ID</Text>
+              <Text style={styles.tableCell}>Shop Owner</Text>
+              <Text style={styles.tableCell}>Customer</Text>
+              <Text style={styles.tableCell}>Count</Text>
+              <Text style={styles.tableCell}>Date</Text>
+            </View>
+
+            {/* Table Rows */}
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color="#aa336a"
+                style={{marginTop: 20}}
+              />
+            ) : shopData.length > 0 ? (
+              shopData.map((item, index) => (
+                <View key={item.id} style={styles.tableRow}>
+                  {/* <Text style={styles.tableCell}>{index + 1}</Text> */}
+                  <Text style={styles.tableCell}>{item.id}</Text>
+                  <Text style={styles.tableCell}>{item.shop_owner_name}</Text>
+                  <Text style={styles.tableCell}>{item.customer_name}</Text>
+                  <Text style={styles.tableCell}>{item.count}</Text>
+                  <Text style={styles.tableCell}>{item.date}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{textAlign: 'center', marginTop: 20}}>
+                No Data Found
+              </Text>
+            )}
+          </>
+        )}
+
+        {/* Show Owner Table Section */}
+        <TouchableOpacity onPress={() => setIsOwnerExpanded(!isOwnerExpanded)}>
+          <Text style={[styles.listHeadLine, {paddingTop: 20}]}>
+            Show Owner Table
+          </Text>
+          <Icon
+            name={isOwnerExpanded ? 'chevron-up' : 'chevron-down'}
+            size={24}
+            color="#666"
+            style={styles.listHeadLineicon}
+          />
+        </TouchableOpacity>
+
+        {/* Show Owner Table Body */}
+        {isOwnerExpanded && (
+          <>
+            {/* Table Header */}
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              {/* <Text style={styles.tableCell}>ID</Text> */}
+              <Text style={styles.tableCell}>Owner id</Text>
+              <Text style={styles.tableCell}>Owner name</Text>
+              <Text style={styles.tableCell}>total icecream</Text>
+              <Text style={styles.tableCell}>sold icecream</Text>
+              <Text style={styles.tableCell}>balance icecream</Text>
+              <Text style={styles.tableCell}>Date</Text>
+            </View>
+
+            {/* Table Rows */}
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color="#aa336a"
+                style={{marginTop: 20}}
+              />
+            ) : ownerData.length > 0 ? (
+              ownerData.map((item, index) => (
+                <View key={item.id} style={styles.tableRow}>
+                  {/* <Text style={styles.tableCell}>{index + 1}</Text> */}
+                  {/* <Text style={styles.tableCell}>{item.id}</Text> */}
+                  <Text style={styles.tableCell}>{item.shop_owner_id}</Text>
+                  <Text style={styles.tableCell}>{item.shop_owner_name}</Text>
+                  <Text style={styles.tableCell}>{item.total_ice_cream}</Text>
+                  <Text style={styles.tableCell}>{item.sold_ice_cream}</Text>
+                  <Text style={styles.tableCell}>{item.balance_ice_cream}</Text>
+                  <Text style={styles.tableCell}>{item.date}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{textAlign: 'center', marginTop: 20}}>
+                No Data Found
+              </Text>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  listHeadLine: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#aa336a',
+    marginBottom: 12,
+  },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  avatarContainer: {
+    marginRight: 16,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+  },
+  nameContainer: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  tableHeader: {
+    backgroundColor: '#ddd',
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingVertical: 8,
+  },
+  tableCell: {
+    flex: 1,
+    fontSize: 12,
+    color: '#333',
+  },
+  listHeadLineicon: {
+    position: 'absolute',
+    right: 0,
+    top: 20,
+  },
+});
+
+export default Icecream;
