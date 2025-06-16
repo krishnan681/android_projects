@@ -53,20 +53,20 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
         <TouchableOpacity
           style={styles.option}
           onPress={() => navigation.navigate('Account')}>
-          <Icon name="person-outline" size={24} color="#aa336a" />
+          <Icon name="person-outline" size={24} color="#3b82f6" />
           <Text style={styles.optionText}>Account</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity
         style={styles.option}
         onPress={() => navigation.navigate('Notifications')}>
-        <Icon name="notifications-outline" size={24} color="#aa336a" />
+        <Icon name="notifications-outline" size={24} color="#3b82f6" />
         <Text style={styles.optionText}>Notifications</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.option}
         onPress={() => navigation.navigate('Coupons')}>
-        <Icon name="gift-outline" size={24} color="#aa336a" />
+        <Icon name="gift-outline" size={24} color="#3b82f6" />
         <Text style={styles.optionText}>Coupons</Text>
       </TouchableOpacity>
 
@@ -75,8 +75,8 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
         <TouchableOpacity
           style={styles.option}
           onPress={() => navigation.navigate('AdminPage')}>
-          <Icon name="settings-outline" size={24} color="red" />
-          <Text style={[styles.optionText, {color: 'red'}]}>Admin Page</Text>
+          <Icon name="settings-outline" size={24} color="#3b82f6" />
+          <Text style={[styles.optionText, ]}>Admin Page</Text>
         </TouchableOpacity>
       )}
 
@@ -84,8 +84,8 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
         <TouchableOpacity
           style={styles.option}
           onPress={() => navigation.navigate('Icecream')}>
-          <Icon name="ice-cream-outline" size={24} color="red" />
-          <Text style={[styles.optionText, {color: 'red'}]}>Icecream</Text>
+          <Icon name="ice-cream-outline" size={24} color="#3b82f6" />
+          <Text style={[styles.optionText,  ]}>Icecream</Text>
         </TouchableOpacity>
       )}
 
@@ -94,7 +94,7 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
         <TouchableOpacity
           style={styles.option}
           onPress={() => navigation.navigate('IceCreamTransaction')}>
-          <Icon name="ice-cream-outline" size={24} color="blue" />
+          <Icon name="ice-cream-outline" size={24} color="#3b82f6" />
           <Text style={[styles.optionText, {color: 'blue'}]}>
             Ice-Cream Transactions
           </Text>
@@ -103,7 +103,7 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
 
       {isLoggedIn && (
         <TouchableOpacity style={styles.option} onPress={confirmLogout}>
-          <Icon name="log-out-outline" size={24} color="#aa336a" />
+          <Icon name="log-out-outline" size={24} color="red" />
           <Text style={[styles.optionText, {color: 'red'}]}>Logout</Text>
         </TouchableOpacity>
       )}
@@ -113,19 +113,19 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
       <TouchableOpacity
         style={styles.option}
         onPress={() => navigation.navigate('ReportBug')}>
-        <Icon name="alert-circle-outline" size={24} color="#aa336a" />
+        <Icon name="alert-circle-outline" size={24} color="#3b82f6" />
         <Text style={styles.optionText}>Report a Bug</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.option}
         onPress={() => navigation.navigate('SendFeedback')}>
-        <Icon name="send-outline" size={24} color="#aa336a" />
+        <Icon name="send-outline" size={24} color="#3b82f6" />
         <Text style={styles.optionText}>Send Feedback</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.option}
         onPress={() => navigation.navigate('UserGuide')}>
-        <Icon name="book-outline" size={24} color="#aa336a" />
+        <Icon name="book-outline" size={24} color="#3b82f6" />
         <Text style={styles.optionText}>User Guide</Text>
       </TouchableOpacity>
 
@@ -150,7 +150,7 @@ const isShopOwner = isLoggedIn && shopOwnerMobileNumber.includes(userData.mobile
       <Text style={styles.sectionTitle}>FOLLOW US</Text>
       <View style={styles.socialContainer}>
         <TouchableOpacity
-          onPress={() => Linking.openURL('https://instagram.com/yourprofile')}>
+          onPress={() => Linking.openURL('https://instagram.com/signpost_directory')}>
           <Icon
             name="logo-instagram"
             size={30}
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#aa336a',
+    // color: '#aa336a',
   },
   option: {
     flexDirection: 'row',
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     marginLeft: 10,
-    color: '#aa336a',
+    // color: '#aa336a',
   },
   authButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#aa336a',
+    backgroundColor: '#3b82f6',
     padding: 15,
     borderRadius: 10,
     marginHorizontal: 20,

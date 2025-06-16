@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,29 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {AuthContext} from './AuthContext';
+import { AuthContext } from './AuthContext';
 
-const Login = ({navigation}) => {
-  const {Login} = useContext(AuthContext);
+const Login = ({ navigation }) => {
+  const { Login } = useContext(AuthContext);
   const [mobileno, setMobileno] = useState('');
   const [password, setPassword] = useState('');
-  const [secureText, setSecureText] = useState(true); // State for password visibility
+  const [secureText, setSecureText] = useState(true);
+  const [loading, setLoading] = useState(false); // Spinner state
 
   const handleLogin = () => {
-    Login(mobileno, password, navigation);
-    setMobileno('');
-    setPassword('');
-    setSecureText(true); // Reset password visibility on login
+    setLoading(true);
+ 
+    setTimeout(() => {
+      Login(mobileno, password, navigation);
+      setMobileno('');
+      setPassword('');
+      setSecureText(true);
+      setLoading(false); // Stop spinner
+    }, 2000);
   };
 
   const handlePassword = (text) => {
@@ -30,8 +37,7 @@ const Login = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      {/* Gradient Background Only at the Top */}
-      <LinearGradient colors={['#FF69B4', '#FFFFFF']} style={styles.topSection}>
+      <LinearGradient colors={['#3b82f6', '#FFFFFF']} style={styles.topSection}>
         <Image
           source={require('../src/assets/images/comaany-logo.png')}
           style={styles.logo}
@@ -40,7 +46,6 @@ const Login = ({navigation}) => {
         <Text style={styles.cpyname}>Signpost Phone Book</Text>
       </LinearGradient>
 
-      {/* White Card Covering Bottom Section */}
       <View style={styles.card}>
         <Text style={styles.header}>
           <Text style={styles.loginText}>Log in</Text> to your account.
@@ -64,13 +69,12 @@ const Login = ({navigation}) => {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            secureTextEntry={secureText} // Toggle password visibility
+            secureTextEntry={secureText}
             placeholderTextColor="#999"
             value={password}
             onChangeText={handlePassword}
           />
-          
-          {/* Show Eye Icon Only If Password is Entered */}
+
           {password.length > 0 && (
             <TouchableOpacity
               onPress={() => setSecureText(!secureText)}
@@ -82,13 +86,15 @@ const Login = ({navigation}) => {
         </View>
 
         <TouchableOpacity>
-          <Text style={styles.forgotPassword}>
-            Note: Your Password is signpost
-          </Text>
+          <Text style={styles.forgotPassword}>Note: Your Password is signpost</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.loginButtonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.signupContainer}>
@@ -141,7 +147,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginText: {
-    color: '#FF69B4',
+    color: '#3b82f6',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -159,20 +165,19 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     fontSize: 16,
-    color: "black",
+    color: 'black',
   },
   eyeIcon: {
     padding: 10,
   },
   forgotPassword: {
-    color: '#FF69B4',
     alignSelf: 'flex-end',
     marginBottom: 20,
   },
   loginButton: {
     width: '100%',
     height: 50,
-    backgroundColor: '#FF69B4',
+    backgroundColor: '#3b82f6',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -191,7 +196,7 @@ const styles = StyleSheet.create({
     color: '#888',
   },
   signupLink: {
-    color: '#FF69B4',
+    color: '#3b82f6',
     fontWeight: 'bold',
   },
 });

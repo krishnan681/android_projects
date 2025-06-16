@@ -1,291 +1,301 @@
-import React, {useState, useEffect} from 'react';
+// import React, { useContext, useState } from 'react';
+// import { Modal, View, Text, TextInput, Button, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+// import { useFavorites } from '../Context/FavoriteContext';
+// import { AuthContext } from './AuthContext';
+// import Icon from 'react-native-vector-icons/FontAwesome';
+
+// export default function Favorites() {
+//   const [visible, setVisible] = useState(false);
+//   const {
+//     favoriteGroups,
+//     deleteGroup,
+//     deleteMember,
+//     addGroup,
+//     editGroup,
+    
+//   } = useFavorites();
+
+//   const {userData}= useContext(AuthContext);
+
+//   return (
+//     <ScrollView>
+//       <TouchableOpacity style={styles.iconContainer} onPress={()=> setVisible(true)}>
+//         <Icon name="plus" size={20} color="#fff"/>
+//      </TouchableOpacity>
+
+//      <Modal
+//         animationType="slide"
+//         transparent={true}
+//         visible={visible}
+//         onRequestClose={() => setVisible(false)}
+//       >
+//         <View style={styles.modalBackground}>
+//           <View style={styles.modalBox}>
+//             <Text style={styles.modalText}>Enter a Group Name</Text>
+//             <TextInput placeholder='Enter a name' style={styles.input}/>
+//             <Button title="Close" onPress={() => setVisible(false)} />
+//           </View>
+//         </View>
+//       </Modal>
+//       {favoriteGroups.map(group => (
+//         <View key={group.id} style={{ padding: 10, borderBottomWidth: 1 }}>
+//           <Text style={{ fontWeight: 'bold' }}>{group.name}</Text>
+//           <Button title="Edit Group" onPress={() => {
+//             Alert.prompt('Edit Group Name', '', newName => editGroup(group.id, newName));
+//           }} />
+//           <Button title="Delete Group" onPress={() => deleteGroup(group.id)} />
+
+//           {group.members.map(member => (
+//             <View key={member.id} style={{ marginLeft: 10 }}>
+//               <Text>- {member.name} ({member.mobileno})</Text>
+              
+//               <Button title="Delete" onPress={() => deleteMember(member.id)} />
+//             </View>
+//           ))}
+//         </View>
+//       ))}
+//     </ScrollView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//    iconContainer: {
+//     backgroundColor: '#007BFF', // Blue background
+//     borderRadius: 25,           // Half of width/height for circle
+//     width: 30,
+//     height: 30,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   modalBackground: {
+//     flex: 1,
+//     backgroundColor: 'rgba(0,0,0,0.5)',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   modalBox: {
+//     width: '80%',
+//     backgroundColor: '#fff',
+//     borderRadius: 10,
+//     padding: 20,
+//     elevation: 10,
+//   },
+//   modalText: {
+//     fontSize: 18,
+//     marginBottom: 15,
+//     textAlign: 'center',
+//   },
+// })
+import React, { useContext, useState } from 'react';
 import {
+  Modal,
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Linking,
+  TextInput,
   ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { useFavorites } from '../Context/FavoriteContext';
+import { AuthContext } from './AuthContext';
 
-const Favorites = () => {
-  const [favorites, setFavorites] = useState({
-    Supplier: [],
-    Buyer: [],
-    Firms: [],
-  });
+export default function Favorites() {
+  const [visible, setVisible] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const { favoriteGroups, deleteGroup, deleteMember, addGroup, editGroup } = useFavorites();
+  const { userData } = useContext(AuthContext);
 
-  const [selectedContacts, setSelectedContacts] = useState({
-    Supplier: [],
-    Buyer: [],
-    Firms: [],
-  });
-
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  const loadFavorites = async () => {
-    try {
-      const storedFavorites = await AsyncStorage.getItem('favorites');
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
+  const handleAddGroup = () => {
+    if (newGroupName.trim() !== '') {
+      addGroup(newGroupName, userData.id);
+      setNewGroupName('');
+      setVisible(false);
+    } else {
+      Alert.alert("Error", "Group name cannot be empty.");
     }
   };
-
-  // Function to toggle selection of a contact
-  const toggleSelection = (category, item) => {
-    setSelectedContacts(prev => {
-      const isSelected = prev[category].some(contact => contact.id === item.id);
-      const updatedCategory = isSelected
-        ? prev[category].filter(contact => contact.id !== item.id)
-        : [...prev[category], item];
-
-      return {...prev, [category]: updatedCategory};
-    });
-  };
-
- 
-  const sendBulkSMS = category => {
-    const numbers = selectedContacts[category]
-      .map(item => item.mobileno)
-      .join(',');
-    if (!numbers) {
-      Alert.alert('Error', 'No contacts selected for SMS');
-      return;
-    }
-    const smsUrl = `sms:${numbers}`;
-    Linking.openURL(smsUrl).catch(err =>
-      console.error('Error opening SMS:', err),
-    );
-  };
-
-  const deleteFavorite = async (category, item) => {
-    Alert.alert(
-      'Delete Favorite',
-      `Are you sure you want to remove ${
-        item.businessname || item.person
-      } from favorites?`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          onPress: async () => {
-            const updatedFavorites = {
-              ...favorites,
-              [category]: favorites[category].filter(
-                contact => contact.id !== item.id,
-              ),
-            };
-            setFavorites(updatedFavorites);
-            await AsyncStorage.setItem(
-              'favorites',
-              JSON.stringify(updatedFavorites),
-            );
-          },
-          style: 'destructive',
-        },
-      ],
-    );
-  };
-
-  const renderCategory = category => (
-    <View style={styles.categoryContainer} key={category}>
-      <Text style={styles.categoryTitle}>{category}</Text>
-
-      {/* Display Selected Contacts */}
-      {selectedContacts[category].length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.selectedContainer}>
-          {selectedContacts[category].map(contact => (
-            <View key={contact.id} style={styles.selectedCard}>
-              <Text style={styles.selectedText}>
-                {contact.businessname || contact.person}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-      )}
-
-      {/* FlatList for category */}
-      {favorites[category]?.length > 0 ? (
-        <FlatList
-          data={favorites[category]}
-          keyExtractor={(item, index) => `fav-${item.id}-${index}`}
-          renderItem={({item}) => {
-            const isSelected = selectedContacts[category].some(
-              contact => contact.id === item.id,
-            );
-            return (
-              <TouchableOpacity
-                style={[styles.card, isSelected && styles.selectedCardStyle]}
-                onPress={() => toggleSelection(category, item)}
-                onLongPress={() => deleteFavorite(category, item)}
-                activeOpacity={0.7}>
-                <View style={styles.cardContent}>
-                  <View style={styles.textContainer}>
-                    <Text style={styles.favoriteText}>
-                      {item.businessname || item.person}
-                    </Text>
-                    {item.product ? (
-                      <Text style={styles.productText}>{item.product}</Text>
-                    ) : null}
-                    {item.city && item.pincode ? (
-                      <Text style={styles.locationText}>
-                        {item.city}, {item.pincode}
-                      </Text>
-                    ) : null}
-                    {item.mobileno ? (
-                      <Text style={styles.mobileText}>
-                        {item.mobileno.slice(0, 5)}xxxxx
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      ) : (
-        <Text style={styles.noFavorites}>No favorites in this category</Text>
-      )}
-
-      {/* Send SMS Button for Category */}
-      {selectedContacts[category].length > 0 && (
-        <TouchableOpacity
-          style={styles.sendButton}
-          onPress={() => sendBulkSMS(category)}>
-          <MaterialIcons name="send" size={20} color="white" />
-          <Text style={styles.sendButtonText}>Send SMS to Selected</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>My Lists</Text>
-      {['Supplier', 'Buyer', 'Firms'].map(category => renderCategory(category))}
-    </View>
+    <ScrollView style={styles.container}>
+      <TouchableOpacity style={styles.addButton} onPress={() => setVisible(true)}>
+        <Icon name="plus" size={20} color="#fff" />
+      </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={visible}
+        onRequestClose={() => setVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalText}>Enter a Group Name</Text>
+            <TextInput
+              placeholder='Enter a name'
+              style={styles.input}
+              value={newGroupName}
+              onChangeText={setNewGroupName}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleAddGroup}>
+                <Text style={styles.btnText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setVisible(false)}>
+                <Text style={styles.btnText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {favoriteGroups.map(group => (
+        <View key={group.id} style={styles.groupContainer}>
+          <View style={styles.groupHeader}>
+            <Text style={styles.groupTitle}>{group.name}</Text>
+            <View style={styles.groupActions}>
+              
+              <TouchableOpacity onPress={() =>
+                Alert.prompt('Edit Group Name', '', newName => editGroup(group.id, newName))
+              }>
+                <Icon name="edit" size={20} color="#007BFF" style={styles.iconMargin} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => deleteGroup(group.id)}>
+                <Icon name="trash" size={20} color="red" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {group.members.map(member => (
+            <View key={member.id} style={styles.card}>
+              <View style={styles.cardLeft}>
+                <Text style={styles.memberName}>{member.name}</Text>
+                <Text style={styles.memberPhone}>
+                  <Icon name="phone" size={14} /> {member.mobileno}
+                </Text>
+              </View>
+              <View style={styles.cardRight}>
+                {/* <TouchableOpacity onPress={() => Implement edit logic}> */}
+                  {/* <Icon name="edit" size={18} color="#007BFF" style={styles.iconMargin} />
+                </TouchableOpacity> */}
+                <TouchableOpacity onPress={() => deleteMember(member.id)}>
+                  <Icon name="trash" size={18} color="red" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
+      ))}
+    </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    padding: 10,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-    color: '#333',
+  addButton: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#007BFF',
+    borderRadius: 25,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
   },
-  categoryContainer: {
+  groupContainer: {
     marginBottom: 20,
   },
-  categoryTitle: {
-    fontSize: 18,
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  groupTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#d32f2f',
-    marginBottom: 8,
+  },
+  groupActions: {
+    flexDirection: 'row',
+  },
+  iconMargin: {
+    marginRight: 15,
   },
   card: {
-    backgroundColor: 'white',
+    flexDirection: 'row',
+    backgroundColor: '#f9f9f9',
     borderRadius: 10,
-    padding: 12,
-    marginVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    padding: 15,
+    marginBottom: 10,
     elevation: 3,
-  },
-  selectedCardStyle: {
-    borderColor: '#d32f2f',
-    borderWidth: 2,
-    backgroundColor: '#fff5f5',
-  },
-  cardContent: {
-    flex: 1,
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  textContainer: {
+  cardLeft: {
     flex: 1,
   },
-  favoriteText: {
+  memberName: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  memberPhone: {
+    fontSize: 14,
+    marginTop: 4,
     color: '#333',
   },
-  productText: {
-    fontSize: 14,
-    color: '#555',
-    marginTop: 2,
-  },
-  locationText: {
-    fontSize: 13,
-    color: '#777',
-    marginTop: 2,
-  },
-  mobileText: {
-    fontSize: 14,
-    color: '#d32f2f',
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  noFavorites: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 5,
-  },
-  sendButton: {
+  cardRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    backgroundColor: '#d32f2f',
-    paddingVertical: 10,
-    borderRadius: 5,
-    marginTop: 10,
+    alignItems: 'center',
   },
-  sendButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 5,
+  modalBox: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    elevation: 10,
   },
-  selectedContainer: {
-    flexDirection: 'row',
-    marginBottom: 8,
+  modalText: {
+    fontSize: 18,
+    marginBottom: 15,
+    textAlign: 'center',
   },
-  selectedCard: {
-    backgroundColor: '#d32f2f',
+  input: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
-    marginRight: 6,
+    paddingVertical: 8,
+    marginBottom: 15,
   },
-  selectedText: {
-    color: 'white',
-    fontSize: 14,
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  saveBtn: {
+    backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  closeBtn: {
+    backgroundColor: '#dc3545',
+    padding: 10,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#fff',
     fontWeight: 'bold',
   },
 });
-
-export default Favorites;

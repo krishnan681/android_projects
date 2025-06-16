@@ -21,6 +21,7 @@ import axios from 'axios';
 import Skeleton from './Skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { useFavorites } from '../Context/FavoriteContext';
 
 const SearchModal = route => {
   const [data, setData] = useState([]);
@@ -31,6 +32,7 @@ const SearchModal = route => {
   const [selectedItem, setSelectedItem] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [activeInput, setActiveInput] = useState(null);
+  const {favoriteGroups, addGroup, addMember} = useFavorites();
 
   const {user, userData} = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
@@ -40,6 +42,7 @@ const SearchModal = route => {
 
   const [favoriteModalVisible, setFavoriteModalVisible] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selctedCategoryId, setSelctedCategoryId] = useState([]);
 
   useEffect(() => {
     if (modalVisible && selectedItem) {
@@ -53,63 +56,63 @@ const SearchModal = route => {
     }
   }, [modalVisible, selectedItem]);
 
-  const handleFavoritePress = () => {
+  const handleFavoritePress = (item) => {
     if (!user) {
       Alert.alert('Login Required', 'You need to log in to add to favorites.', [
         {text: 'OK', onPress: () => navigation.navigate('Login')},
       ]);
       return;
     }
-    setFavoriteModalVisible(true);
+    if(favoriteGroups.length===0){
+      Alert.alert('Empty Group', 'You need to Create favorite Group.', [
+        {text: 'OK', onPress: () => navigation.navigate('Favorites')},
+      ]);
+      return;
+    }
+      setFavoriteModalVisible(true); 
+      setSelectedItem(item);              
   };
 
   const toggleCategory = category => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(item => item !== category)
-        : [...prev, category],
-    );
+    console.log(category)
+    setSelectedCategories(category.name);
+    setSelctedCategoryId(category.id)
   };
 
+  // const handleFavorites = (person) =>{
+  //   const groupNames = favoriteGroups.map(g=>g.name);
+  //   Alert.prompt(
+  //     'Favorite Group',
+  //     `Enter group name to save ${person.businessname||person.personname}`,
+  //     async (input) =>{
+  //       const group = favoriteGroups.find(g=> g.name === input);
+  //       if(group){
+  //         await addMember(group.id, person.businessname, person.mobileno)
+  //       }else{
+  //         await addGroup(input);
+  //         setTimeout(async() => {
+  //           const updated = favoriteGroups.find(g=>g.name === input);
+  //           if(updated){
+  //             await addMember(updated.id, person.businessname, person.mobileno);
+  //           }
+  //         }, 500);// set time for update
+  //       }
+  //     }
+  //   )
+  // }
+
   const handleSaveFavorite = async () => {
-    if (!selectedItem || selectedCategories.length === 0) return;
-
-    try {
-      const storedFavorites = await AsyncStorage.getItem('favorites');
-      let currentFavorites = storedFavorites
-        ? JSON.parse(storedFavorites)
-        : {Supplier: [], Buyer: [], Firms: []};
-
-      selectedCategories.forEach(category => {
-        // Ensure we save all necessary details for proper display
-        const fullItem = {
-          id: selectedItem.id,
-          businessname: selectedItem.businessname || '',
-          person: selectedItem.person || '',
-          product: selectedItem.product || '',
-          city: selectedItem.city || '',
-          pincode: selectedItem.pincode || '',
-          mobileno: selectedItem.mobileno || '',
-        };
-
-        if (
-          !currentFavorites[category].some(item => item.id === selectedItem.id)
-        ) {
-          currentFavorites[category].push(fullItem);
-        }
-      });
-
-      await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
-      console.log('Saved:', currentFavorites);
-
-      // Close modal
+    if (selectedItem){
+      await addGroup(selectedCategories,userData.id)
+      await addMember(selctedCategoryId, selectedItem.businessname || selectedItem.person, selectedItem.mobileno)
+       // Close modal
       setFavoriteModalVisible(false);
 
       // Show success message
       Alert.alert('Success', 'Added to My List successfully!');
-    } catch (error) {
-      console.error('Error saving favorite:', error);
-    }
+    }else{
+      Alert.alert("Failed to Save")
+    }     
   };
 
   const handleEnquiryPress = item => {
@@ -283,7 +286,7 @@ const SearchModal = route => {
 
           <TouchableOpacity
               style={styles.dailheartButton}
-              onPress={() => handleFavoritePress()}>
+              onPress={()=>handleFavoritePress(item)}>
               <MaterialIcons name="favorite-border" size={20} color="red" />
             </TouchableOpacity>
 
@@ -323,12 +326,7 @@ const SearchModal = route => {
 
             {/* suppiler, Buyer, Firms */}
 
-            {/* <TouchableOpacity
-              style={styles.heartButton}
-              onPress={() => handleFavoritePress()}>
-              <MaterialIcons name="favorite-border" size={20} color="red" />
-            </TouchableOpacity> */}
-
+            
             {/* Enquiry Button */}
             <TouchableOpacity
               style={styles.enquirybutton}
@@ -346,7 +344,7 @@ const SearchModal = route => {
   return (
     <View style={styles.container}>
       {/* HEADER */}
-      <LinearGradient colors={['#FF69B4', '#FFFFFF']} style={styles.header}>
+      <LinearGradient colors={['#3b82f6', '#FFFFFF']} style={styles.header}>
         {/* <View style={styles.headerTop}>
           <Text style={styles.welcomeText}>
             Welcome {userData.businessname || userData.person || 'Guest'}
@@ -411,6 +409,7 @@ const SearchModal = route => {
             <TextInput
               placeholder="Search by Firms/Person"
               style={styles.searchInput}
+              placeholderTextColor="#999"
               value={firmName}
               onChangeText={setFirmName}
               onFocus={() => {
@@ -427,6 +426,7 @@ const SearchModal = route => {
             onPress={() => setActiveInput('second')}>
             <TextInput
               placeholder="Search by product"
+              placeholderTextColor="#999"
               style={styles.searchInput}
               value={productName}
               onChangeText={setProductName}
@@ -515,7 +515,7 @@ const SearchModal = route => {
         onRequestClose={() => setFavoriteModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            {/* Close Button (X) */}
+            
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setFavoriteModalVisible(false)}>
@@ -524,21 +524,22 @@ const SearchModal = route => {
 
             <Text style={styles.modalHeading}>Add to Favorites</Text>
 
-            {['Supplier', 'Buyer', 'Firms'].map(category => (
+            
+            {favoriteGroups.map(group => (
               <TouchableOpacity
-                key={category}
+                key={group.id}
                 style={styles.checkboxRow}
-                onPress={() => toggleCategory(category)}>
+                onPress={() => toggleCategory(group)}>
                 <MaterialIcons
                   name={
-                    selectedCategories.includes(category)
+                    selectedCategories.includes(group.name)
                       ? 'check-box'
                       : 'check-box-outline-blank'
                   }
                   size={24}
                   color="red"
                 />
-                <Text style={styles.checkboxLabel}>{category}</Text>
+                <Text style={styles.checkboxLabel}>{group.name}</Text>
               </TouchableOpacity>
             ))}
 

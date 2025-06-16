@@ -3,681 +3,559 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   FlatList,
   TouchableOpacity,
-  ScrollView,
   Alert,
   Image,
-  TextInput,
   Linking,
-  ImageBackground,
+  BackHandler,
+  Modal,
+  TextInput,
 } from 'react-native';
-import Carousel from 'react-native-reanimated-carousel';
 import LinearGradient from 'react-native-linear-gradient';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {AuthContext} from './AuthContext';
 import axios from 'axios';
-import {useNavigation} from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import {AuthContext} from './AuthContext';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-// playstore
+const cardColors = [['#ffdf00', '#ffffe0']];
 
-const openPlayStoreLink = url => {
-  Linking.openURL(url).catch(err => {
-    console.error('Failed to open Play Store:', err);
-  });
-};
+const avatarImage = require('../src/assets/images/default-profile.png');
 
-const {width} = Dimensions.get('window');
+const Card = ({item, isPerson, index}) => {
+  const [avatarUri, setAvatarUri] = useState(null);
 
-const categories = [
-  {
-    name: 'Automation',
-    image: require('../src/assets/images/Automation.jpg'),
-    route: 'Automation',
-  },
-  {
-    name: 'Foundary',
-    image: require('../src/assets/images/foundary.jpg'),
-    route: 'Foundary',
-  },
-  {
-    name: 'Machinary',
-    image: require('../src/assets/images/Machinery.jpeg'),
-    route: 'Machinery',
-  },
-  {
-    name: 'CNC',
-    image: require('../src/assets/images/modelcnc.jpeg'),
-    route: 'CNC',
-  },
-  {
-    name: 'Textiles',
-    image: require('../src/assets/images/textiles.jpg'),
-    route: 'Textiles',
-  },
-  {
-    name: 'Fabrications',
-    image: require('../src/assets/images/fabrication.jpg'),
-    route: 'Fabrication',
-  },
-];
+  const handleCall = () => {
+    if (item?.mobileno) Linking.openURL(`tel:${item.mobileno}`);
+  };
 
-const companyNames = [
-  {
-    name: 'Janatics',
-    logo: require('../src/assets/images/Janatics-logo.png'),
-    color: '#f2f2f2',
-  },
-  {
-    name: 'SunWater Supply',
-    logo: require('../src/assets/images/ajith-logo.png'),
-    color: '#f2f2f2',
-  },
-  {
-    name: 'Ajith Associates',
-    logo: require('../src/assets/images/ajith-logo.png'),
-    color: '#f2f2f2',
-  },
-  {
-    name: 'Fabtech',
-    logo: require('../src/assets/images/fabtech-logo.png'),
-    color: '#f2f2f2',
-  },
-  {
-    name: 'Raison Automation',
-    logo: require('../src/assets/images/Raison-logo.png'),
-    color: '#f2f2f2',
-  },
-  {
-    name: 'MKS Foods',
-    logo: require('../src/assets/images/mks-foods.png'),
-    color: '#f2f2f2',
-  },
-];
+  const handleEnquiry = () => {
+    const name = isPerson ? item.person : item.businessname;
+    const message = `Hi, I have an enquiry regarding ${name}`;
+    if (item?.mobileno) {
+      Linking.openURL(
+        `sms:${item.mobileno}?body=${encodeURIComponent(message)}`,
+      );
+    }
+  };
 
-const Landingpage = () => {
-  const {userData} = useContext(AuthContext);
-  const [profileImage, setProfileImage] = useState(null);
-  const navigation = useNavigation();
-  const [companies, setCompanies] = useState([]);
+  const gradient = cardColors[index % cardColors.length];
 
   useEffect(() => {
-    const fetchData = async () => {
+    console.log('Fetching profile image for item:', item.id);
+
+    const fetchProfileImage = async () => {
       try {
-        const response = await fetch(
-          'https://signpostphonebook.in/client_fetch_for_new_database.php',
+        const response = await axios.get(
+          `https://signpostphonebook.in/image_upload_for_new_database.php?id=${item.id}`,
         );
-        const jsonResponse = await response.json();
-        if (Array.isArray(jsonResponse)) {
-          const sortedData = jsonResponse.sort((a, b) => b.id - a.id);
-          setCompanies(sortedData);
+        if (response.data.success && response.data.imageUrl) {
+          // console.log('Profile image URL:', response.data.imageUrl);
+          const imageUrl = response.data.imageUrl.startsWith('http')
+            ? response.data.imageUrl
+            : `https://signpostphonebook.in/${response.data.imageUrl}`;
+          setAvatarUri(`${imageUrl}`);
         } else {
-          Alert.alert('Error', 'Unexpected response from server.');
+          setAvatarUri(null);
         }
       } catch (error) {
-        Alert.alert('Error', 'Failed to load data: ' + error.message);
+        setAvatarUri(null);
       }
     };
-    fetchData();
+
+    if (item.id) {
+      fetchProfileImage();
+    }
+  }, []);
+
+  return isPerson ? (
+    <View style={[styles.card, styles.personCardBorder]}>
+      <View style={styles.row}>
+        <Image
+          source={avatarUri ? {uri: avatarUri} : avatarImage}
+          style={styles.avatar}
+        />
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{item.person}</Text>
+          <Text style={styles.phone}>{item.mobileno}</Text>
+          {/* {!!item.city && <Text style={styles.city}>{item.city}</Text>} */}
+        </View>
+      </View>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.personbtn} onPress={handleCall}>
+          <Text style={styles.btnText}>📞 Call</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.personbtn} onPress={handleEnquiry}>
+          <Text style={styles.btnText}>💬 Enquiry</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.favoriteBtn}>
+          <Text style={styles.favoriteText}>💚 Favorite</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  ) : (
+    <LinearGradient colors={gradient} style={styles.card}>
+      <View style={styles.row}>
+        <Image
+          source={avatarUri ? {uri: avatarUri} : avatarImage}
+          style={styles.avatar}
+        />
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{item.businessname}</Text>
+          <Text style={styles.category}>{item.product || 'N/A'}</Text>
+          {!!item.rating && <Text style={styles.rating}>⭐ {item.rating}</Text>}
+          <Text style={styles.phone}>{item.mobileno}</Text>
+          {/* {!!item.city && <Text style={styles.city}>{item.city}</Text>} */}
+        </View>
+      </View>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.businessbtn} onPress={handleEnquiry}>
+          <Text style={styles.btnText}>💬 Enquiry</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.favoriteBtn}>
+          <Text style={styles.favoriteText}>💚 Favorite</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.businessbtn} onPress={handleCall}>
+          <Text style={styles.btnText}>📞 Call</Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  );
+};
+
+const Landingpage = () => {
+  const [selectedTab, setSelectedTab] = useState('business');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [companies, setCompanies] = useState([]);
+  const {userData} = useContext(AuthContext);
+  const [profileImage, setProfileImage] = useState(null);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+  const navigation = useNavigation();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        setExitModalVisible(true);
+        return true;
+      };
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => backHandler.remove();
+    }, []),
+  );
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const res = await fetch(
+          'https://signpostphonebook.in/client_fetch_for_new_database.php',
+        );
+        const json = await res.json();
+        if (Array.isArray(json)) setCompanies(json.sort((a, b) => b.id - a.id));
+        else Alert.alert('Error', 'Unexpected response from server');
+      } catch {
+        Alert.alert('Error', 'Failed to load data');
+      }
+    };
+    fetchCompanies();
   }, []);
 
   useEffect(() => {
     const fetchProfileImage = async () => {
       if (!userData?.id) return;
       try {
-        const response = await axios.get(
+        const res = await axios.get(
           `https://signpostphonebook.in/image_upload_for_new_database.php?id=${userData.id}`,
         );
-        if (response.data.success) {
-          const imageUrl = response.data.imageUrl;
-          const fullUrl = imageUrl.startsWith('http')
-            ? imageUrl
-            : `https://signpostphonebook.in/${imageUrl}`;
-          setProfileImage(`${fullUrl}?t=${new Date().getTime()}`);
+        if (res.data.success && res.data.imageUrl) {
+          const url = res.data.imageUrl.startsWith('http')
+            ? res.data.imageUrl
+            : `https://signpostphonebook.in/${res.data.imageUrl}`;
+          setProfileImage(`${url}?t=${Date.now()}`);
         }
-      } catch (error) {
-        console.error('Error fetching profile image:', error);
+      } catch (err) {
+        console.error('Profile image fetch failed', err);
       }
     };
-
     fetchProfileImage();
   }, [userData?.id]);
 
+  const handleExit = () => BackHandler.exitApp();
+
+  const handleRateApp = () => {
+    setExitModalVisible(false);
+    Linking.openURL('market://details?id=com.celfonphonebookapp').catch(
+      console.error,
+    );
+  };
+
+  const filterBySearch = items => {
+    return items.filter(item => {
+      const name = item.businessname || item.person || '';
+      return name.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  };
+
+  const getFilteredData = () => {
+    let filtered = [];
+
+    if (selectedTab === 'business') {
+      filtered = companies.filter(i => i.businessname?.trim());
+    } else if (selectedTab === 'person') {
+      filtered = companies.filter(i => !i.businessname && i.person?.trim());
+    } else {
+      filtered = companies;
+    }
+
+    return filterBySearch(filtered);
+  };
+
+  const filteredData = getFilteredData();
+
   return (
-    <ScrollView style={styles.container}>
-      <LinearGradient colors={["#FF69B4", "#FFFFFF"]}>
+    <View style={styles.container}>
+      <Text style={styles.header}>Signpost Phonebook</Text>
 
-      
-      <View style={styles.carouselWrapper}>
+      <TouchableOpacity
+        style={styles.profileIconContainer}
+        onPress={() => {
+          if (userData?.id) navigation.navigate('Profile');
+          else
+            Alert.alert(
+              'Login Required',
+              'You need to log in to view your Profile.',
+              [{text: 'OK', onPress: () => navigation.navigate('Login')}],
+            );
+        }}>
         <Image
-          // source={require('../src/assets/images/Clouds.png')}
-          style={{width: '100%', height: 230, resizeMode: 'cover'}}
+          source={profileImage ? {uri: profileImage} : avatarImage}
+          style={styles.profileIcon}
         />
-        <View style={styles.overlayHeader}>
-          <View style={styles.topRow}>
-            <Text style={styles.welcomeText}>
-              Welcome {userData.businessname || userData.person || 'Guest'}
+      </TouchableOpacity>
+
+      {/* Tabs */}
+      <View style={styles.switcher}>
+        {['all', 'business', 'person'].map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, selectedTab === tab && styles.activeTab]}
+            onPress={() => {
+              setSelectedTab(tab);
+              setSearchQuery('');
+            }}>
+            <Text
+              style={
+                selectedTab === tab ? styles.activeTabText : styles.tabText
+              }>
+              {tab === 'all'
+                ? '📋 All'
+                : tab === 'business'
+                ? '📇 Businesses'
+                : '👤 Persons'}
             </Text>
-
-            <TouchableOpacity
-              style={styles.profileIconContainer}
-              onPress={() => {
-                if (userData?.id) {
-                  navigation.navigate('Profile');
-                } else {
-                  Alert.alert(
-                    'Login Required',
-                    'You need to log in to view your Profile.',
-                    [{text: 'OK', onPress: () => navigation.navigate('Login')}],
-                  );
-                }
-              }}>
-              {userData?.id && profileImage ? (
-                <Image
-                  source={{uri: profileImage}}
-                  style={styles.profileIcon}
-                  resizeMode="cover"
-                />
-              ) : (
-                <MaterialIcons name="person" size={28} color="black" />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Search Bar aligned below */}
-          <View style={styles.searchContainer}>
-            <TextInput
-              placeholder="Firm/Product.."
-              onFocus={() => navigation.navigate('FeauturedSearch')}
-              style={styles.searchInput}
-            />
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color="#555"
-              style={styles.searchIcon}
-            />
-          </View>
-
-          <View style={styles.centeredTextWrapper}>
-            <Text style={styles.centeredText}>Welcome to</Text>
-            <Text style={styles.brandTitle}>Celfon5g</Text>
-            <Text style={styles.tagline}>Empowering Industry</Text>
-          </View>
-        </View>
+          </TouchableOpacity>
+        ))}
       </View>
-      </LinearGradient>
 
-      <View style={styles.bodyWrapper}>
-        <View style={styles.gridWrapper}>
-          <Text style={styles.sectionTitle}>Products</Text>
-          <FlatList
-            data={categories}
-            numColumns={3}
-            keyExtractor={(item, index) => item.name + index}
-            columnWrapperStyle={{justifyContent: 'space-between'}}
-            contentContainerStyle={{paddingBottom: 20}}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                onPress={() => navigation.navigate(item.route)}
-                style={styles.categoryItem}>
-                <ImageBackground
-                  source={item.image}
-                  style={styles.categoryImage}
-                  imageStyle={{borderRadius: 30}}
-                />
-                <Text style={styles.productName}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-            scrollEnabled={false}
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          placeholder={
+            selectedTab === 'all'
+              ? 'Search all...'
+              : selectedTab === 'business'
+              ? 'Search businesses...'
+              : 'Search persons...'
+          }
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            style={styles.clearButton}>
+            <Icon name="close-circle" size={22} color="#888" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Cards */}
+      <FlatList
+        data={filteredData}
+        keyExtractor={item => item?.id?.toString() || Math.random().toString()}
+        renderItem={({item, index}) => (
+          <Card
+            item={item}
+            index={index}
+            isPerson={!item.businessname && !!item.person}
           />
-        </View>
+        )}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={<Text style={styles.empty}>No records found.</Text>}
+      />
 
-        <View style={styles.companiesSection}>
-          <Text style={styles.sectionTitle}>Companies A - Z</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.alphabetScroller}>
-            {Array.from({length: 26}, (_, i) =>
-              String.fromCharCode(65 + i),
-            ).map(letter => (
+      {/* Exit Modal */}
+      <Modal visible={exitModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Exit App</Text>
+            <Text style={styles.modalMessage}>
+              Do you want to exit or rate the app?
+            </Text>
+            <View style={styles.modalButtonRow}>
               <TouchableOpacity
-                key={letter}
-                style={styles.letterButton}
-                onPress={() => {
-                  const filtered = companies.filter(
-                    company =>
-                      company.businessname &&
-                      company.businessname.charAt(0).toLowerCase() ===
-                        letter.toLowerCase(),
-                  );
-
-                  navigation.navigate('AlphabeticalList', {
-                    selectedLetter: letter,
-                    filteredCompanies: filtered,
-                  });
-                }}>
-                <Text style={styles.letterText}>{letter}</Text>
+                onPress={handleRateApp}
+                style={[styles.modalButton, {backgroundColor: '#4CAF50'}]}>
+                <Text style={styles.modalButtonText}>Rate</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <View style={styles.companiesGrid}>
-            {companyNames.map((company, index) => (
               <TouchableOpacity
-                key={index}
-                style={[styles.companyCard, {backgroundColor: company.color}]}
-                onPress={() => {
-                  const filtered = companies.filter(
-                    c =>
-                      c.businessname &&
-                      c.businessname
-                        .toLowerCase()
-                        .includes(company.name.toLowerCase()),
-                  );
-
-                  if (filtered.length === 0) {
-                    Alert.alert(
-                      'Not Found',
-                      `No listings found for "${company.name}"`,
-                    );
-                    return;
-                  }
-
-                  navigation.navigate('AlphabeticalList', {
-                    selectedLetter: company.name[0].toUpperCase(),
-                    filteredCompanies: filtered,
-                    selectedBusinessName: company.name,
-                  });
-                }}>
-                <Image source={company.logo} style={styles.logo} />
-                <Text style={styles.companyName}>{company.name}</Text>
+                onPress={() => setExitModalVisible(false)}
+                style={[styles.modalButton, {backgroundColor: '#2196F3'}]}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* books */}
-
-        <View style={styles.booksCardRow}>
-          {/* Book 1 */}
-          <View style={styles.booksCardSmall}>
-            <ImageBackground
-              source={require('../src/assets/images/Book2024.jpg')}
-              style={styles.booksImage}
-              imageStyle={styles.booksImageRadius}>
-              <View style={styles.booksBadge}>
-                <Text style={styles.booksBadgeText}>1</Text>
-              </View>
-            </ImageBackground>
-            <View style={styles.booksContent}>
-              <Text style={styles.booksTitle}>Coimbatore 2024</Text>
-              <Text style={styles.booksDescription}>
-                This Coimbatore 2024 (21st Edition) Industrial Directory
-              </Text>
               <TouchableOpacity
-                style={styles.booksButton}
-                onPress={() =>
-                  openPlayStoreLink(
-                    'https://play.google.com/store/books/details/Lion_Dr_Er_J_Shivakumaar_COIMBATORE_2024_Industria?id=kwgSEQAAQBAJ',
-                  )
-                }>
-                <Text style={styles.booksButtonText}>Free Now</Text>
+                onPress={handleExit}
+                style={[styles.modalButton, {backgroundColor: '#f44336'}]}>
+                <Text style={styles.modalButtonText}>Exit</Text>
               </TouchableOpacity>
-              {/* <Text style={styles.booksPrice}>40.0 INR</Text>
-              <Text style={styles.booksOldPrice}>80</Text> */}
-            </View>
-          </View>
-
-          {/* Book 2 */}
-          <View style={styles.booksCardLarge}>
-            <ImageBackground
-              source={require('../src/assets/images/Book2025.jpg')}
-              style={styles.booksImage}
-              imageStyle={styles.booksImageRadius}>
-              <View style={styles.booksBadge}>
-                <Text style={styles.booksBadgeText}>2</Text>
-              </View>
-            </ImageBackground>
-            <View style={styles.booksContent}>
-              <Text style={styles.booksTitle}>Coimbatore 2025</Text>
-              <Text style={styles.booksDescription}>
-                This is a Preview Edition of Coimbatore 2025 Industrial
-                Directory
-              </Text>
-              <TouchableOpacity
-                style={styles.booksButton}
-                onPress={() =>
-                  openPlayStoreLink(
-                    'https://play.google.com/store/books/details/Lion_Dr_Er_J_Shivakumaar_COIMBATORE_2025_Industria?id=sCE6EQAAQBAJ',
-                  )
-                }>
-                <Text style={styles.booksButtonText}>Free trial</Text>
-              </TouchableOpacity>
-              {/* <Text style={styles.booksPrice}>40.0 INR</Text>
-              <Text style={styles.booksOldPrice}>80.0 INR</Text> */}
-            </View>
-          </View>
-
-          {/* Book 3 */}
-          <View style={styles.booksCardSmall}>
-            <ImageBackground
-              source={require('../src/assets/images/FirstImage.jpg')}
-              style={styles.booksImage}
-              imageStyle={styles.booksImageRadius}>
-              <View style={styles.booksBadge}>
-                <Text style={styles.booksBadgeText}>3</Text>
-              </View>
-            </ImageBackground>
-            <View style={styles.booksContent}>
-              <Text style={styles.booksTitle}>Coimbatore 2026</Text>
-              <Text style={styles.booksDescription}>
-                This Coimbatore 2026 Directory Releasing soon ...
-              </Text>
-              <TouchableOpacity style={styles.booksButton}>
-                <Text style={styles.booksButtonText}>Comming Soon</Text>
-              </TouchableOpacity>
-              {/* <Text style={styles.booksPrice}>00.0 INR</Text>
-              <Text style={styles.booksOldPrice}>00</Text> */}
             </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </Modal>
+    </View>
   );
 };
 
+export default Landingpage;
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
     flex: 1,
+    paddingTop: 40,
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignSelf: 'center',
+    marginBottom: 10,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  welcomeText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
-  },
-
-  profileIconContainer: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-  },
-  profileIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 25,
-    borderWidth: 5,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  overlayHeader: {
-    position: 'absolute',
-    top: 0,
-    width: '100%',
-    paddingTop: 25,
-    paddingHorizontal: 20,
-  },
-
-  centeredTextWrapper: {
-    alignItems: 'center',
-    marginTop: 1,
-    lineHeight: 20,
-  },
-
-  centeredText: {
-    fontSize: 16,
-
-    fontWeight: '400',
-    fontStyle: 'italic',
-  },
-
-  brandTitle: {
-    fontSize: 28,
-
-    fontWeight: '900',
-    fontFamily: 'serif',
-    letterSpacing: 2,
-  },
-
-  tagline: {
-    fontSize: 14,
-
-    marginTop: 4,
-  },
-
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    height: 40,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 4,
-    marginBottom: 12,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 5,
-    fontSize: 14,
-  },
-  searchIcon: {
-    marginLeft: 8,
-  },
-
-  bodyWrapper: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    marginTop: -20,
-    paddingTop: 20,
-    paddingHorizontal: 12,
-  },
-
-  gridWrapper: {
-    marginTop: 10,
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 6,
-
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '700',
-    marginBottom: 12,
-    color: '#333',
-    paddingLeft: 20,
-    paddingTop: 10,
-  },
-  categoryItem: {
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '30%',
-  },
-  categoryImage: {
-    width: 50,
-    height: 50,
-  },
-  productName: {
-    fontSize: 12,
     textAlign: 'center',
-    color: '#444',
+    marginBottom: 30,
   },
-
-  //---coming companies---//
-
-  companiesSection: {
-    marginTop: 20,
-    paddingBottom: 20,
+  switcher: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    overflow: 'hidden',
   },
-
-  alphabetScroller: {
-    paddingHorizontal: 16,
-    marginBottom: 10,
+  tab: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
   },
-
-  letterButton: {
-    backgroundColor: '#f2f2f2',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
+  activeTab: {
+    backgroundColor: '#6C7BFB',
   },
-
-  letterText: {
-    fontSize: 14,
+  tabText: {
     fontWeight: '600',
     color: '#555',
   },
-
-  companiesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    padding: 10,
+  activeTabText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
-  companyCard: {
+  list: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: {width: 0, height: 4},
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  personCardBorder: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#FF69B4',
+  },
+  row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    width: '47%',
-    marginVertical: 8,
-    padding: 10,
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+    backgroundColor: '#fff',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  category: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  rating: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  phone: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  city: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  businessbtn: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
     borderRadius: 10,
+    alignItems: 'center',
+  },
+  personbtn: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#1E90FF',
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  btnText: {
+    // color: '#fff',
+    fontWeight: '600',
+  },
+  favoriteBtn: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#32CD32',
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  favoriteText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  empty: {
+    textAlign: 'center',
+    marginTop: 30,
+    fontSize: 16,
+    color: '#888',
+  },
+  profileIconContainer: {
+    position: 'absolute',
+    top: 30,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e0e0e0',
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+
+  //search
+
+  searchContainer: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    position: 'relative',
+  },
+
+  searchInput: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginVertical: 5,
+
+    paddingVertical: 10,
+    paddingLeft: 12,
+    paddingRight: 40,
+    fontSize: 16,
+    color: '#333',
+  },
+
+  clearButton: {
+    position: 'absolute',
+    right: 10,
+    top: '30%',
+  },
+
+  //exit modal styles
+
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
     gap: 10,
   },
-  logo: {
-    width: 35,
-    height: 35,
-    borderRadius: 55,
-  },
-  companyName: {
-    fontSize: 16,
-    fontWeight: '00',
-    flexShrink: 1,
-  },
-
-  //books
-
-  booksCardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-
-    marginTop: 20,
-  },
-  booksCardSmall: {
-    width: 110,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  booksCardLarge: {
-    width: 140,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  booksImage: {
-    width: '100%',
-    height: 160,
-    justifyContent: 'flex-start',
-  },
-  booksImageRadius: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  booksBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#f57c00',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  modalButton: {
+    flex: 1,
+    padding: 10,
     borderRadius: 5,
-  },
-  booksBadgeText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  booksContent: {
-    padding: 8,
-  },
-  booksTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  booksDescription: {
-    fontSize: 10,
-    color: '#555',
-    marginBottom: 6,
-  },
-  booksButton: {
-    backgroundColor: '#ff5722',
-    paddingVertical: 4,
-    borderRadius: 20,
     alignItems: 'center',
-    marginBottom: 4,
   },
-  booksButtonText: {
-    color: '#fff',
-    fontSize: 12,
+  modalButtonText: {
+    color: 'white',
     fontWeight: 'bold',
-  },
-  booksPrice: {
-    color: '#e53935',
-    fontWeight: 'bold',
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  booksOldPrice: {
-    textDecorationLine: 'line-through',
-    color: '#999',
-    fontSize: 12,
-    textAlign: 'center',
   },
 });
-
-export default Landingpage;

@@ -1,5 +1,4 @@
-// =============================== updated signup page ======================================
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,259 +7,32 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Button,
   Image,
-} from "react-native";
-// import RNPickerSelect from "react-native-picker-select";
-import { RadioButton } from "react-native-paper";
-import LinearGradient from "react-native-linear-gradient";
-import { KeyboardAvoidingView, Platform } from "react-native";
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
+const Signup = ({navigation}) => {
+  // State variables
+  const [isBusinessMode, setIsBusinessMode] = useState(true);
 
-const Signup = ({ navigation }) => {
-  const [mypromoCode, setPromoCode] = useState("");
-  const [mybusinessname, setBusinessname] = useState("");
-  const [myaddress, setAddress] = useState("");
-  const [myperson, setPerson] = useState("");
-  const [mycity, setCity] = useState("");
-  const [mydoorno, setDoorno] = useState("");
-  const [mypincode, setPincode] = useState("");
-  const [myproduct, setProduct] = useState("");
-  const [mylandLine, setLandLine] = useState("");
-  const [myLcode, setLcode] = useState("");
-  const [myemail, setEmail] = useState("");
-  const [myprefix, setPrefix] = useState("");
-  const [mymobileno, setMobileno] = useState("");
-  const [showMobiletext, setshowMobiletext] = useState(false);
-  const [showbusinesstext, setShowBusinesstext] = useState(false);
-  const [regName, setRegName] = useState("");
-  const [regPrefix, setRegPrefix] = useState("");
-  const [regBusinessName, setRegBusinessName] = useState("");
-  const [regBusinessPrefix, setRegBusinessPrefix] = useState("");
-  const [showPersonName, setShowPersonName] = useState(false);
-  const [showprefixtext, setShowPrefixText] = useState(false);
-  const [showAddressText, setshowAddressText] = useState(false);
-  const [showCityText, setshowCityText] = useState(false);
-  const [showPincodeText, setshowPincodeText] = useState(false);
-  const [showProductText, setshowProductText] = useState(false);
-  const [showLandlineText, setshowLandlineText] = useState(false);
+  const [mypromoCode, setPromoCode] = useState('');
+  const [mybusinessname, setBusinessname] = useState('');
+  const [mydoorno, setDoorno] = useState('');
+  const [myperson, setPerson] = useState('');
+  const [mycity, setMycity] = useState('');
+  const [mypincode, setPincode] = useState('');
+  const [myproduct, setProduct] = useState('');
+  const [mylandLine, setLandLine] = useState('');
+  const [myLcode, setLcode] = useState('');
+  const [myemail, setEmail] = useState('');
+  const [mymobileno, setMobileno] = useState('');
+  const [myprefix, setPrefix] = useState('M/s.'); // Default to M/S for business
+
   const [isRegistered, setIsRegistered] = useState(false);
-  const [showStdText, setshowStdText] = useState(false);
-  const [showEmailText, setshowEmailText] = useState(false);
-  const [showPromoText, setshowPromoText] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-  const [showPopup1, setShowPopup1] = useState(false);
-  const mypriority = "0";
-  const mydiscount = "10";
-  const mydescription = "Update Soon";
-  const cmpanyPrefix = "M/s.";
 
-  const [dateTime, setDateTime] = useState("");
-
-  const updateDateTime = () => {
-    const now = new Date();
-
-    // Format date
-    const options = { year: "numeric", month: "numeric", day: "numeric" };
-    const formattedDate = now.toLocaleDateString(undefined, options);
-
-    // Format time
-    let hours = now.getHours();
-    const minutes = now.getMinutes();
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12 || 12; // Convert to 12-hour format
-    const formattedTime = `${hours}:${minutes < 10 ? "0" + minutes : minutes
-      } ${ampm}`;
-
-    // Combine date and time
-    setDateTime(`${formattedDate} ${formattedTime}`);
-  };
-
-  useEffect(() => {
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 1000); // Update every second
-    return () => clearInterval(interval); // Cleanup interval on unmount
-  }, []);
-
-  const resetForm = () => {
-    setBusinessname("");
-    setMobileno("");
-    setPrefix("");
-    setAddress("");
-    setPerson("");
-    setPincode("");
-    setCity("");
-    setProduct("");
-    setLandLine("");
-    setLandLine("");
-    setLcode("");
-    setEmail("");
-    setPromoCode("");
-  };
-
-  const handleBusinessName = (e) => {
-    const businessName = e.target.value;
-    if (/^[a-zA-Z\s]*$/.test(businessName)) {
-      setBusinessname(businessName);
-    }
-  };
-
-   // for Landline number
-
-   const handleLandline = text => {
-    const numericText = text.replace(/[^0-9]/g, ''); // Allow only numbers
-    setLandLine(numericText);
-  };
-
-  // for Std number
-
-  const handleStdCode = text => {
-    const numericText = text.replace(/[^0-9]/g, ''); // Allow only numbers
-    setLcode(numericText);
-  };
-
-
-   // for Pincode number
-
-   const handlePincode = text => {
-    const numericText = text.replace(/[^0-9]/g, ''); // Allow only numbers
-    setPincode(numericText);
-  };
-
-
-  const handlePersonName = (e) => {
-    const personName = e.target.value;
-    if (/^[a-zA-Z\s]*$/.test(personName)) {
-      setPerson(personName);
-    }
-  };
-  const handlePopup = (e) => {
-    e.preventDefault();
-    setShowPopup(false);
-    navigate("/login");
-    resetForm();
-  };
-
-  const handleClosePopup1 = (e) => {
-    e.preventDefault();
-    setShowPopup1(false);
-  };
-  const handleCityName = (e) => {
-    const cityName = e.target.value;
-    if (/^[a-zA-Z\s]*$/.test(cityName)) {
-      setCity(cityName);
-    }
-  };
-
-    // `https://signpostphonebook.in/client_insert_data_for_new_database.php`,
-
-
-    const checkMobileNumber = async (mobile) => {
-      try {
-        const response = await fetch(
-          `https://signpostphonebook.in/client_insert_data_for_new_database.php`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ mobileno: mobile }),
-          }
-        );
-        const result = await response.json();
-        console.log("Check Mobile Response:", result);
-    
-        if (result.registered) {
-          setIsRegistered(true);
-          Alert.alert(
-            "Mobile Number Exists",
-            `This mobile number is already registered under the name: ${result.businessname || result.person || "Unknown"}`
-          );
-          setMobileno("");
-        } else {
-          setIsRegistered(false);
-        }
-      } catch (error) {
-        console.error("Error checking mobile:", error);
-        Alert.alert("Error", "Unable to verify mobile number.");
-      }
-    };
-    
-
-  // Insert new record if the mobile number is not registered
-  const insertRecord = async () => {
-    if (isRegistered) {
-      Alert.alert("Error", "Mobile number is already registered.");
-      return;
-    }
-    // Frontend validation for required fields
-    if (
-      !mybusinessname ||
-      !mydoorno ||
-      !mycity ||
-      !mypincode ||
-      !myprefix ||
-      !mymobileno
-    ) {
-      Alert.alert("Validation Error", "Please enter all required fields.");
-      return;
-    }
-
-    const Data = {
-      businessname: mybusinessname,
-      doorno: mydoorno,
-      city: mycity,
-      pincode: mypincode,
-      prefix: myprefix,
-      mobileno: mymobileno,
-      email: myemail,
-      product: myproduct,
-      landline: mylandLine,
-      lcode: myLcode,
-    };
-
-    console.log("Sending Data:", Data);
-
-    try {
-      const response = await fetch(
-        "https://signpostphonebook.in/client_insert_data_for_new_database.php",
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(Data),
-        }
-      );
-
-      const jsonResponse = await response.json();
-      console.log("Server Response:", jsonResponse);
-
-      if (jsonResponse.Message) {
-        Alert.alert("Success", jsonResponse.Message);
-        navigation.navigate("Login");
-        setBusinessname("");
-        setCity("");
-        setDoorno("");
-        setEmail("");
-        setLandLine("");
-        setPincode("");
-        setLcode("");
-        setMobileno("");
-        setPrefix("");
-        setProduct("");
-      } else {
-        Alert.alert("Error", "Unexpected response from server.");
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      Alert.alert("Error", error.message);
-    }
-  };
-  
-
- const [helpText, setHelpText] = useState({
+  const [helpText, setHelpText] = useState({
     mobile: false,
     person: false,
     prefix: false,
@@ -272,356 +44,748 @@ const Signup = ({ navigation }) => {
     landline: false,
     std: false,
     email: false,
-    promocode:false,
+    promocode: false,
   });
 
-  // Reset all help texts
-  const resetAllHelpTexts = () => {
-    setHelpText({
-      mobile: false,
-      person: false,
-      prefix: false,
-      business: false,
-      address: false,
-      city: false,
-      pincode: false,
-      product: false,
-      landline: false,
-      std: false,
-      email: false,
-      promocode:false,
-    });
+  const [dateTime, setDateTime] = useState('');
+
+  // Toggle business / personal mode
+  const toggleMode = mode => {
+    if (
+      (mode === 'business' && !isBusinessMode) ||
+      (mode === 'personal' && isBusinessMode)
+    ) {
+      setIsBusinessMode(!isBusinessMode);
+      resetForm();
+      // Set default prefix only for business mode
+      if (mode === 'business') {
+        setPrefix('M/s.');
+      } else {
+        setPrefix(''); // No default prefix in personal mode
+      }
+    }
   };
 
-  // Set specific help text
-  const setHelpTextVisible = (field) => {
+  // Reset all form fields and flags
+  const resetForm = () => {
+    setBusinessname('');
+    setPerson('');
+    // Reset prefix depending on mode
+    setPrefix(isBusinessMode ? 'M/S' : 'Mr.');
+    setMobileno('');
+    setDoorno('');
+    setMycity('');
+    setPincode('');
+    setProduct('');
+    setLandLine('');
+    setLcode('');
+    setEmail('');
+    setPromoCode('');
+    setIsRegistered(false);
     resetAllHelpTexts();
-    setHelpText((prev) => ({ ...prev, [field]: true }));
+  };
+
+  // Input validation handlers
+  const handleBusinessName = text => {
+    // Accept all except numbers
+    const filteredText = text;
+    setBusinessname(filteredText);
+  };
+  const handlePersonName = text => {
+    if (/^[a-zA-Z\s]*$/.test(text)) setPerson(text);
+  };
+  const handlePincode = text => setPincode(text.replace(/[^0-9]/g, ''));
+  const handleLandline = text => setLandLine(text.replace(/[^0-9]/g, ''));
+  const handleStdCode = text => setLcode(text.replace(/[^0-9]/g, ''));
+  const handleCity = () => {
+      if (`${isBusinessMode? mybusinessname : myperson}`) {
+        setHelpTextVisible('cityName');
+      } else {
+        Alert.alert(`${isBusinessMode ? 'Enter Business Name':'Enter Person Name'}`);
+        resetForm();
+      }
+    };
+
+  // Help text controls
+  const resetAllHelpTexts = () =>
+    setHelpText(
+      Object.keys(helpText).reduce((acc, key) => ({...acc, [key]: false}), {}),
+    );
+
+  const setHelpTextVisible = field => {
+    resetAllHelpTexts();
+    setHelpText(prev => ({...prev, [field]: true}));
+  };
+
+  // Check mobile uniqueness on server
+  const checkMobileNumber = async mobile => {
+    // immediately reject first digit 1–5
+    if (mobile.length === 1 && !['6', '7', '8', '9'].includes(mobile[0])) {
+      Alert.alert(
+        'Invalid Start',
+        'Mobile number must start with 6, 7, 8, or 9.',
+      );
+      setMobileno('');
+      return;
+    }
+    if (mobile.length !== 10) return;
+
+    try {
+      const response = await fetch(
+        'https://signpostphonebook.in/client_insert_data_for_new_database.php',
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({mobileno: mobile}),
+        },
+      );
+      const result = await response.json();
+      if (result.registered) {
+        setIsRegistered(true);
+        Alert.alert(
+          'Mobile Number Exists',
+          `Already registered under: ${
+            result.businessname || result.person || 'Unknown'
+          }`,
+        );
+        setMobileno('');
+      } else {
+        setIsRegistered(false);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Unable to verify mobile number.');
+    }
+  };
+
+  const insertRecord = async () => {
+    if (isRegistered) {
+      return Alert.alert('Error', 'Mobile number already registered.');
+    }
+
+    // ✅ Business Mode
+    if (isBusinessMode) {
+      if (
+        !mybusinessname.trim() ||
+        !mydoorno.trim() ||
+        !mycity.trim() ||
+        !mypincode.trim() ||
+        !mymobileno.trim() ||
+        !myproduct.trim()
+      ) {
+        return Alert.alert(
+          'Validation Error',
+          'Please fill all required business fields.',
+        );
+      }
+
+      if (mypincode.length !== 6) {
+        return Alert.alert('Validation Error', 'Pincode must be 6 digits.');
+      }
+
+      if (mymobileno.length !== 10) {
+        return Alert.alert(
+          'Validation Error',
+          'Mobile number must be 10 digits.',
+        );
+      }
+
+      const businessData = {
+        businessname: mybusinessname,
+        address: mydoorno,
+        city: mycity,
+        pincode: mypincode,
+        prefix: 'M/s.',
+        mobileno: mymobileno,
+        email: myemail, // optional, but included if available
+        product: myproduct,
+        landline: mylandLine,
+        lcode: myLcode,
+        promocode: mypromoCode,
+        person: '',
+        personprefix: '',
+      };
+
+      try {
+        const res = await fetch(
+          'https://signpostphonebook.in/client_insert_data_for_new_database.php',
+          {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(businessData),
+          },
+        );
+
+        const json = await res.json();
+
+        if (json.Message) {
+          Alert.alert('Success', json.Message);
+          resetForm();
+          navigation.navigate('Login');
+        } else {
+          Alert.alert('Error', 'Unexpected server response.');
+        }
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Error', error.message);
+      }
+
+      // ✅ Personal Mode
+    } else {
+      if (
+        !myperson.trim() ||
+        !myprefix.trim() ||
+        !mydoorno.trim() ||
+        !mycity.trim() ||
+        !mypincode.trim() ||
+        !mymobileno.trim()
+      ) {
+        return Alert.alert(
+          'Validation Error',
+          'Please fill all required personal fields.',
+        );
+      }
+
+      if (myprefix !== 'Mr.' && myprefix !== 'Ms.') {
+        return Alert.alert(
+          'Validation Error',
+          'Please select prefix Mr. or Ms.',
+        );
+      }
+
+      if (mypincode.length !== 6) {
+        return Alert.alert('Validation Error', 'Pincode must be 6 digits.');
+      }
+
+      if (mymobileno.length !== 10) {
+        return Alert.alert(
+          'Validation Error',
+          'Mobile number must be 10 digits.',
+        );
+      }
+
+      const personalData = {
+        person: myperson,
+        address: mydoorno,
+        city: mycity,
+        pincode: mypincode,
+        prefix: '',
+        personprefix: myprefix,
+        mobileno: mymobileno,
+        email: myemail, // optional, included if available
+        product: '', // not applicable in personal mode
+        landline: mylandLine,
+        lcode: myLcode,
+        promocode: mypromoCode,
+        businessname: '',
+      };
+
+      try {
+        const res = await fetch(
+          'https://signpostphonebook.in/client_insert_data_for_new_database.php',
+          {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(personalData),
+          },
+        );
+
+        const json = await res.json();
+
+        if (json.Message) {
+          Alert.alert('Success', json.Message);
+          resetForm();
+          navigation.navigate('Login');
+        } else {
+          Alert.alert('Error', 'Unexpected server response.');
+        }
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Error', error.message);
+      }
+    }
   };
 
   return (
-
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.flex}>
+      <LinearGradient colors={['#4f9fff', '#b6d6ff']} style={styles.header}>
+        <Image
+          source={require('../src/assets/images/comaany-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.title}>Create Your Account</Text>
+        <Text style={styles.dateTime}>{dateTime}</Text>
+      </LinearGradient>
+
       <View style={styles.container}>
-        {/* Gradient Background Only at the Top */}
-        <LinearGradient colors={["#FF69B4", "#FFFFFF"]} style={styles.topSection}>
-          <Image
-            source={require('../src/assets/images/comaany-logo.png')} // Replace with your logo
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </LinearGradient>
+        {/* Mode Toggle */}
+        <View style={styles.toggleWrapper}>
+          <TouchableOpacity
+            onPress={() => toggleMode('business')}
+            style={[
+              styles.toggleButton,
+              isBusinessMode ? styles.activeToggle : styles.inactiveToggle,
+            ]}>
+            <Text
+              style={[
+                styles.toggleText,
+                isBusinessMode
+                  ? styles.activeToggleText
+                  : styles.inactiveToggleText,
+              ]}>
+              Business
+            </Text>
+          </TouchableOpacity>
 
-        {/* White Card Covering Bottom Section */}
-        <View style={styles.card}>
-          <Text style={styles.header}>
-            <Text style={styles.signupText}>Sign Up</Text> to create an account.
-          </Text>
-
-          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-
-            <Text style={styles.label}>Mobile Number* :</Text>
-            <TextInput
-              placeholder="Mobile Number"
-              keyboardType="number-pad"
-              maxLength={10}
-              style={styles.input}
-              value={mymobileno}
-              onChangeText={(text) => setMobileno(text)}
-              onEndEditing={() => checkMobileNumber(mymobileno)}
-              onFocus={() => setHelpTextVisible("mobile")}
-            />
-            {helpText.mobile && (
-              <Text style={styles.helpText}>
-                Type 10 digits without Country code (+91), without gap Don't Type Land Line
-              </Text>
-            )}
-            
-
-           
-            <Text style={styles.label}> Person Name* :</Text>
-            <TextInput
-              placeholder="Person"
-              style={styles.input}
-              onChangeText={(text) => setPerson(text)}
-              value={myperson}
-              onFocus={() => setHelpTextVisible("person")}
-
-            />
-            {helpText.person && (
-              <Text style={styles.helpText}>
-                Type Initial at the end
-              </Text>
-            )}
-
-            <Text style={styles.label}>Prefix*:</Text>
-            <RadioButton.Group
-              onValueChange={(value) => {
-                setPrefix(value)
-                setHelpTextVisible("prefix")
-              }}
-              value={myprefix}
-            >
-              <View style={styles.radioContainer}>
-                <View style={styles.radioOption}>
-                  <RadioButton value="Mr." />
-                  <Text>Mr.</Text>
-                </View>
-                <View style={styles.radioOption}>
-                  <RadioButton value="Ms." />
-                  <Text>Ms.</Text>
-                </View>
-
-              </View>
-            </RadioButton.Group>
-            {helpText.prefix && (
-              <Text style={styles.helpText}>Select Mr. For Gents and Ms. for Ladies</Text>
-            )}
-
-            <Text style={styles.label}>Business Name* :</Text>
-            <TextInput
-              placeholder="Business Name"
-              style={styles.input}
-              onChangeText={(text) => setBusinessname(text)}
-              value={mybusinessname}
-              onFocus={() => setHelpTextVisible("business")}
-            />
-            {helpText.business && (
-              <Text style={styles.helpText}>Type Your FirmName or BusinessName</Text>
-            )}            
-
-
-
-            <Text style={styles.label}>City* :</Text>
-            <TextInput
-              placeholder="City"
-              style={styles.input}
-              onChangeText={(text) => setCity(text)}
-              value={mycity}
-              onFocus={() => setHelpTextVisible("cityName")}
-            />
-            {helpText.cityName && (
-              <Text style={styles.helpText}>Type City Name. Don't Use Petnames (Kovai Etc.)</Text>
-            )}
-
-            <Text style={styles.label}>Pincode* :</Text>
-            <TextInput
-              placeholder="Pincode"
-              keyboardType="number-pad"
-              maxLength={6}
-              style={styles.input}
-              onChangeText={handlePincode}
-              value={mypincode}
-              onFocus={() => setHelpTextVisible("pincode")}
-            />
-            {helpText.pincode && (
-              <Text style={styles.helpText}>Type 6 Digits Continioulsy Without Gap</Text>
-            )}
-
-
-            <Text style={styles.label}>Address* :</Text>
-            <TextInput
-              placeholder="Address"
-              style={[styles.input, { height: 80 }]}
-              multiline
-              onChangeText={(text) => setDoorno(text)}
-              value={mydoorno}
-              onFocus={() => setHelpTextVisible("address")}
-            />
-            {helpText.address && (
-              <Text style={styles.helpText}>Type Door Number, Street, Flat No, Appartment Name, Landmark, Area Name etc.</Text>
-            )}
-            
-            <Text style={styles.label}>Product / Service* :</Text>
-            <TextInput
-              placeholder="Product"
-              style={styles.input}
-              onChangeText={(text) => setProduct(text)}
-              value={myproduct}
-              onFocus={() => setHelpTextVisible("product")}
-            />
-            {helpText.product && (
-              <Text style={styles.helpText}>Type Correct & Specific Name of Product/Service offered. Sepparate Each Keyword By Comma. For</Text>
-            )}
-
-            <Text style={styles.label}>Landline Number :</Text>
-            <TextInput
-              placeholder="Landline Number"
-              keyboardType="number-pad"
-              style={styles.input}
-              onChangeText={handleLandline}
-              value={mylandLine}
-              onFocus={() => setHelpTextVisible("landline")}
-            />
-
-            {helpText.landline && (
-              <Text style={styles.helpText}>Type Only Landline, if Available. Don't Type Mobile Number here.</Text>
-            )}
-
-            <Text style={styles.label}>STD Code :</Text>
-            <TextInput
-              placeholder="STD Code"
-              keyboardType="number-pad"
-              style={styles.input}
-              onChangeText={handleStdCode}
-              value={myLcode}
-              onFocus={() => setHelpTextVisible("std")}
-            />
-            {helpText.std && (
-              <Text style={styles.helpText}>Type Only Landline, if Available. Don't Type Mobile Number here.</Text>
-            )}
-
-            <Text style={styles.label}>Email :</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="example@mail.com"
-              keyboardType="email-address"
-              value={myemail}
-              onChangeText={(text) => setEmail(text)}
-              autoCapitalize="none"
-              onFocus={() => setHelpTextVisible("email")}
-            />
-
-            {helpText.email && (
-              <Text style={styles.helpText}>Type Correctly, Only If Available</Text>
-            )}
-            
-            <Text style={styles.label}>Promo-Code :</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your Promo code"
-              keyboardType="text"
-              value={mypromoCode}
-              onChangeText={(text) => setPromoCode(text)}
-              autoCapitalize="none"
-              onFocus={() => setHelpTextVisible("promocode")}
-            />
-            {helpText.promocode && (
-              <Text style={styles.helpText}>Enter name or Number Who is referred to this App!</Text>
-            )}
-
-            <TouchableOpacity style={styles.signupButton} onPress={insertRecord}>
-              <Text style={styles.signupButtonText}>Submit</Text>
-            </TouchableOpacity>
-          </ScrollView>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-              <Text style={styles.loginLink}>Login</Text>
-            </TouchableOpacity>
-          </View>
-
+          <TouchableOpacity
+            onPress={() => toggleMode('personal')}
+            style={[
+              styles.toggleButton,
+              !isBusinessMode ? styles.activeToggle : styles.inactiveToggle,
+            ]}>
+            <Text
+              style={[
+                styles.toggleText,
+                !isBusinessMode
+                  ? styles.activeToggleText
+                  : styles.inactiveToggleText,
+              ]}>
+              Person
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{paddingBottom: 40}}>
+          {/* Mobile Number - Common First */}
+          <Input
+            label="Mobile Number *"
+            value={mymobileno}
+            onChangeText={text => {
+              setMobileno(text);
+              checkMobileNumber(text);
+            }}
+            placeholder="Enter 10-digit mobile number"
+            keyboardType="phone-pad"
+            maxLength={10}
+            onFocus={() => setHelpTextVisible('mobile')}
+          />
+          {helpText.mobile && (
+            <Text style={styles.helpText}>Enter your WhatsApp number</Text>
+          )}
+
+          {isBusinessMode ? (
+            <>
+              {/* Business Name */}
+              <Input
+                label="Business Name *"
+                value={mybusinessname}
+                onChangeText={handleBusinessName}
+                placeholder="Enter business name"
+                onFocus={() => setHelpTextVisible('business')}
+              />
+
+              {/* City */}
+              <Input
+                label="City *"
+                value={mycity}
+                onChangeText={handleCity}
+                placeholder="Enter city"
+                onFocus={() => setHelpTextVisible('city')}
+              />
+              {helpText.city && (
+                <Text style={styles.helpText}>Type full city name</Text>
+              )}
+
+              {/* Pincode */}
+              <Input
+                label="Pincode *"
+                value={mypincode}
+                onChangeText={handlePincode}
+                placeholder="Enter 6-digit pincode"
+                keyboardType="number-pad"
+                maxLength={6}
+                onFocus={() => setHelpTextVisible('pincode')}
+              />
+              {helpText.pincode && (
+                <Text style={styles.helpText}>Use valid Indian pincode</Text>
+              )}
+
+              {/* Address */}
+              <Input
+                label="Address *"
+                value={mydoorno}
+                onChangeText={setDoorno}
+                placeholder="Enter address"
+                multiline
+                numberOfLines={3}
+                onFocus={() => setHelpTextVisible('address')}
+              />
+              {helpText.address && (
+                <Text style={styles.helpText}>Include door no & street</Text>
+              )}
+
+              {/* Product / Service */}
+              <Input
+                label="Product"
+                value={myproduct}
+                onChangeText={setProduct}
+                placeholder="Enter product"
+                onFocus={() => setHelpTextVisible('product')}
+              />
+              {helpText.product && (
+                <Text style={styles.helpText}>
+                  Mention key products/services
+                </Text>
+              )}
+
+              {/* Landline */}
+              <Input
+                label="Landline"
+                value={mylandLine}
+                onChangeText={handleLandline}
+                placeholder="Enter landline number"
+                keyboardType="phone-pad"
+                onFocus={() => setHelpTextVisible('landline')}
+              />
+              {helpText.landline && (
+                <Text style={styles.helpText}>Optional backup contact</Text>
+              )}
+
+              {/* STD Code */}
+              <Input
+                label="L Code"
+                value={myLcode}
+                onChangeText={handleStdCode}
+                placeholder="Enter L code"
+                onFocus={() => setHelpTextVisible('std')}
+              />
+              {helpText.std && (
+                <Text style={styles.helpText}>Use L code if applicable</Text>
+              )}
+
+              {/* Email */}
+              <Input
+                label="Email"
+                value={myemail}
+                onChangeText={setEmail}
+                placeholder="Enter email (optional)"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onFocus={() => setHelpTextVisible('email')}
+              />
+              {helpText.email && (
+                <Text style={styles.helpText}>Optional but recommended</Text>
+              )}
+
+              {/* Promo Code */}
+              <Input
+                label="Promo Code"
+                value={mypromoCode}
+                onChangeText={setPromoCode}
+                placeholder="Enter promo code"
+                onFocus={() => setHelpTextVisible('promocode')}
+              />
+              {helpText.promocode && (
+                <Text style={styles.helpText}>Enter if you have one</Text>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Prefix Selector */}
+              <View style={{marginBottom: 15}}>
+                <Text style={styles.inputLabel}>Prefix *</Text>
+                <View style={styles.prefixContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.prefixButton,
+                      myprefix === 'Mr.' && styles.prefixSelected,
+                    ]}
+                    onPress={() => setPrefix('Mr.')}>
+                    <Text
+                      style={[
+                        styles.prefixText,
+                        myprefix === 'Mr.' && styles.prefixTextSelected,
+                      ]}>
+                      Mr.
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.prefixButton,
+                      myprefix === 'Ms.' && styles.prefixSelected,
+                    ]}
+                    onPress={() => setPrefix('Ms.')}>
+                    <Text
+                      style={[
+                        styles.prefixText,
+                        myprefix === 'Ms.' && styles.prefixTextSelected,
+                      ]}>
+                      Ms.
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Person Name */}
+              <Input
+                label="Person Name *"
+                value={myperson}
+                onChangeText={handlePersonName}
+                placeholder="Enter full name"
+                onFocus={() => setHelpTextVisible('person')}
+              />
+              {helpText.person && (
+                <Text style={styles.helpText}>Type Initial at the end</Text>
+              )}
+
+              {/* City */}
+              <Input
+                label="City *"
+                value={mycity}
+                onChangeText={handleCityName}
+                placeholder="Enter city"
+                onFocus={() => setHelpTextVisible('city')}
+              />
+              {helpText.city && (
+                <Text style={styles.helpText}>Type full city name</Text>
+              )}
+
+              {/* Pincode */}
+              <Input
+                label="Pincode *"
+                value={mypincode}
+                onChangeText={handlePincode}
+                placeholder="Enter 6-digit pincode"
+                keyboardType="number-pad"
+                maxLength={6}
+                onFocus={() => setHelpTextVisible('pincode')}
+              />
+              {helpText.pincode && (
+                <Text style={styles.helpText}>Use valid Indian pincode</Text>
+              )}
+
+              {/* Address */}
+              <Input
+                label="Address *"
+                value={mydoorno}
+                onChangeText={setDoorno}
+                placeholder="Enter address"
+                multiline
+                
+              />
+
+              {helpText.address && (
+                <Text style={styles.helpText}>Include door no & street</Text>
+              )}
+
+              {/* Email */}
+              <Input
+                label="Email"
+                value={myemail}
+                onChangeText={setEmail}
+                placeholder="Enter email (optional)"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onFocus={() => setHelpTextVisible('email')}
+              />
+              {helpText.email && (
+                <Text style={styles.helpText}>Optional but recommended</Text>
+              )}
+
+              {/* Promo Code */}
+              <Input
+                label="Promo Code"
+                value={mypromoCode}
+                onChangeText={setPromoCode}
+                placeholder="Enter promo code"
+                onFocus={() => setHelpTextVisible('promocode')}
+              />
+              {helpText.promocode && (
+                <Text style={styles.helpText}>Enter if you have one</Text>
+              )}
+            </>
+          )}
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={insertRecord}
+            activeOpacity={0.8}>
+            <Text style={styles.submitButtonText}>Submit</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
-
     </KeyboardAvoidingView>
-
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
+const Input = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  maxLength,
+  multiline,
+  numberOfLines,
+  onFocus,
+}) => (
+  <View style={{marginBottom: 15}}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor="#999"
+      style={[
+        styles.input,
+        multiline && {height: 80, textAlignVertical: 'top'},
+      ]}
+      keyboardType={keyboardType}
+      maxLength={maxLength}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+      autoCapitalize="words"
+      onFocus={onFocus}
+    />
+  </View>
+);
 
-  topSection: {
-    height: "20%", // Covers the top area
-    justifyContent: "center",
-    alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: '#f5f9ff',
+  },
+  header: {
+    paddingTop: 20,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    elevation: 6,
   },
   logo: {
-    top:-20,
-    width: 150,
+    width: 140,
     height: 50,
+    // marginBottom: 10,
   },
-  card: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 10,
-    marginTop: -50,
-    elevation: 5,
-    minHeight: "75%",  // Ensure enough space
-  },
-
-  header: {
+  title: {
     fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: "#333",
-    textAlign: "center",
+    fontWeight: '700',
+    color: '#1c3c72',
   },
-  signupText: {
-    color: "#aa336a",
+  dateTime: {
+    marginTop: 4,
+    color: '#fff',
+    fontSize: 14,
   },
-  label: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
+  container: {
+    flex: 1,
+    marginHorizontal: 20,
+    marginTop: 25,
+  },
+  toggleWrapper: {
+    flexDirection: 'row',
+    backgroundColor: '#e6f0ff',
+    borderRadius: 12,
+    marginBottom: 25,
+    overflow: 'hidden',
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  activeToggle: {
+    backgroundColor: '#3b82f6',
+  },
+  inactiveToggle: {
+    backgroundColor: 'transparent',
+  },
+  toggleText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  activeToggleText: {
+    color: '#fff',
+  },
+  inactiveToggleText: {
+    color: '#3b82f6',
+  },
+  inputLabel: {
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 6,
+    fontSize: 15,
   },
   input: {
-    borderWidth: 2,
-    borderColor: "#000000",
-    borderRadius: 5,
-    marginVertical: 8,
-    paddingHorizontal: 10,
-    height: 50,
+    backgroundColor: '#f0f4ff',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    height: 48,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#cbd6f1',
+    color: '#111',
   },
-  radioOption: {
-    flexDirection: "row",
-    alignItems: "center",
+  helpText: {
+    color: 'red',
+    fontSize: 13,
     marginBottom: 8,
   },
-  radioContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent:"space-evenly"
-  },
-  signupButton: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#aa336a",
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
+  submitButton: {
     marginTop: 10,
+    backgroundColor: '#3b82f6',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    shadowColor: '#3b82f6',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
   },
-  signupButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 20,
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
   },
-  loginContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 15,
-
+  prefixContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
   },
-  loginText: {
-    color: "#000",
-    fontSize:20,
-
+  prefixButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginRight: 15,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
   },
-  loginLink: {
-    color: "#aa336a",
-    fontWeight: "bold",
-    fontSize:20
-
+  prefixSelected: {
+    backgroundColor: '#3b82f6',
   },
-  helpText:{
-    color:"red",
-    fontSize:16,
-  }
+  prefixText: {
+    fontSize: 15,
+    color: '#3b82f6',
+    fontWeight: '600',
+  },
+  prefixTextSelected: {
+    color: '#fff',
+  },
 });
-
 
 export default Signup;

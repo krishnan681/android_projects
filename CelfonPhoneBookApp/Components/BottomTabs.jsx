@@ -139,6 +139,8 @@ import {StyleSheet, TouchableOpacity, View, Text, Platform} from 'react-native';
 import {AuthContext} from './AuthContext';
 import {Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import * as Animatable from 'react-native-animatable';
+
 
 // Screens
 import Home from './Home';
@@ -152,15 +154,7 @@ const Tab = createBottomTabNavigator();
 const BottomTabs = ({navigation}) => {
   const {user} = useContext(AuthContext);
 
-  const handleRestrictedNavigation = (navigation, screenName) => {
-    if (!user) {
-      Alert.alert('Restricted Access', 'You need to log in.');
-      navigation.navigate('Login');
-      return;
-    }
-    navigation.navigate(screenName);
-  };
-
+ 
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -187,25 +181,14 @@ const BottomTabs = ({navigation}) => {
           }
           return <FontAwesome name={iconName} size={24} color={color} />;
         },
-        tabBarActiveTintColor: '#aa336a',
+        tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#000',
         tabBarStyle: styles.tabBarStyle,
         headerShown: false,
       })}>
       <Tab.Screen name="Home" component={Landingpage} />
 
-      {/* <Tab.Screen
-        name="MediaPartner"
-        component={user ? NearbyPromotion : Login}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            if (!user) {
-              e.preventDefault();
-              handleRestrictedNavigation(navigation, "NearbyPromotion");
-            }
-          },
-        })}
-      /> */}
+      
 
       <Tab.Screen
         name="MediaPartner"
@@ -214,24 +197,32 @@ const BottomTabs = ({navigation}) => {
       />
 
       <Tab.Screen
-        name="Search"
-        component={Home}
-        options={{
-          tabBarButton: () => {
-            const navigation = useNavigation();
+  name="Search"
+  component={Home}
+  options={{
+    tabBarButton: () => {
+      const navigation = useNavigation();
 
-            return (
-              <TouchableOpacity
-                style={styles.floatingButton}
-                onPress={() => navigation.navigate('SearchMore')}>
-                <FontAwesome name="search" size={24} color="#fff" />
-              </TouchableOpacity>
-            );
-          },
-        }}
-      />
+      return (
+        <Animatable.View
+          animation="pulse"
+          iterationCount="infinite"
+          duration={2000}
+          easing="ease-in-out"
+          style={styles.floatingButtonContainer}>
+          <TouchableOpacity
+            style={styles.floatingButton}
+            onPress={() => navigation.navigate('SearchMore')}>
+            <FontAwesome name="search" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Animatable.View>
+      );
+    },
+  }}
+/>
 
-      <Tab.Screen name="Promotions" component={Promotions} />
+
+      <Tab.Screen name="Promotions" component={Promotions} options={{headerShown: false}} />
 
       <Tab.Screen name="Settings" component={Settings} />
     </Tab.Navigator>
@@ -265,6 +256,14 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
   },
+  floatingButtonContainer: {
+  
+  justifyContent: 'center',
+  alignItems: 'center',
+  width: 70,
+  height: 70,
+},
+
 });
 
 export default BottomTabs;

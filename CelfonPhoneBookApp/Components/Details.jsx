@@ -1,4 +1,3 @@
-
 import React, {useEffect, useState, useContext} from 'react';
 import {
   View,
@@ -12,22 +11,40 @@ import {
 } from 'react-native';
 import {AuthContext, AuthProvider} from './AuthContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-// import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
 const Details = ({route, navigation}) => {
   // Get the selected item passed from navigation
   const {selectedItem} = route.params;
   const {user, userData} = useContext(AuthContext);
-  
-  // const [location, setLocation] = useState(null);
 
   const [modalVisible, setModalVisible] = useState(false);
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
+  const [usageCount, setUsageCount] = useState(0);
+
+  const handleAction = actionCallback => {
+    if (usageCount >= 3) {
+      Alert.alert(
+        'Limit Reached',
+        'You have reached your free usage limit. Please subscribe to continue.',
+        [{text: 'OK', onPress: () => navigation.navigate('Subscription')}],
+      );
+      return;
+    }
+
+    setUsageCount(prev => prev + 1);
+    actionCallback(); // run the actual action
+  };
 
   const openDialpad = number => {
     let phoneUrl = `tel:${number}`;
+    Linking.openURL(phoneUrl).catch(() =>
+      Alert.alert('Error', 'Dial pad not supported'),
+    );
+  };
+  const openLandLine = (number, code) => {
+    let phoneUrl = `tel: ${code}${number}`;
     Linking.openURL(phoneUrl).catch(() =>
       Alert.alert('Error', 'Dial pad not supported'),
     );
@@ -45,50 +62,7 @@ const Details = ({route, navigation}) => {
     Linking.openURL(`sms:${number}`);
   };
 
-  // useEffect(() => {
-  //   const fetchLocation = async () => {
-  //     const addressOptions = [
-  //       `${selectedItem.pincode}`,
-  //     ];
-    
-  //     let locationFound = false;
-  //     for (const address of addressOptions) {
-  //       console.log("Trying address:", address);
-  //       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-  //       const data = await response.json();
-    
-  //       console.log("API Response Data:", data);
-    
-  //       if (data.length > 0) {
-  //         // Check for a city-level result, otherwise fallback to the first result
-  //         const cityResult = data.find(item => item.class === 'place' && item.type === 'city');
-  //         const loc = cityResult || data[0];  // Use city-level result if found, otherwise use the first result
-    
-  //         setLocation({
-  //           latitude: parseFloat(loc.lat),
-  //           longitude: parseFloat(loc.lon),
-  //           latitudeDelta: 0.01,
-  //           longitudeDelta: 0.01,
-  //         });
-  //         locationFound = true;
-  //         break;
-  //       }
-  //     }
-    
-  //     if (!locationFound) {
-  //       Alert.alert("Could not find location from given address");
-  //     }
-  //   };
-    
-    
-    
-
-  //   if (selectedItem?.address && selectedItem?.city && selectedItem?.pincode) {
-  //     fetchLocation();
-  //   }
-  // }, [selectedItem]);  // Trigger effect whenever selectedItem changes
-
-
+  console.log(selectedItem.lcode)
 
   return (
     <ScrollView contentContainerStyle={styles.home_container}>
@@ -111,9 +85,11 @@ const Details = ({route, navigation}) => {
               selectedItem?.person ||
               'Name not found'}
           </Text>
+          <Text style={styles.home_subtitle}>{selectedItem?.person? selectedItem.person : ''}</Text>
+          <Text style={styles.home_subtitle}>{selectedItem.landline?selectedItem.landline:""}</Text>
           <Text style={styles.home_subtitle}>{selectedItem?.product}</Text>
           <Text style={styles.home_subtitle}>
-            {selectedItem?.mobileno.slice(0, 5)}xxxxx
+            {selectedItem.mobileno&&selectedItem?.mobileno.slice(0, 5)}xxxxx
           </Text>
           <Text style={styles.home_subtitle}>
             {selectedItem?.address},{selectedItem?.city},{selectedItem?.pincode}{' '}
@@ -122,28 +98,43 @@ const Details = ({route, navigation}) => {
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#6A0DAD'}]}
-              onPress={() => openDialpad(selectedItem?.mobileno)}>
+              onPress={() =>
+                handleAction(() => openDialpad(selectedItem?.mobileno))
+              }>
               <Text style={styles.buttonText}>Dial</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#25D366'}]}
-              onPress={() => openWhatsApp(selectedItem?.mobileno)}>
+              onPress={() =>
+                handleAction(() => openWhatsApp(selectedItem?.mobileno))
+              }>
               <Text style={styles.buttonText}>WhatsApp</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#FF9900'}]}
-              onPress={() => sendEmail(selectedItem?.email)}>
+              onPress={() =>
+                handleAction(() => sendEmail(selectedItem?.email))
+              }>
               <Text style={styles.buttonText}>Email</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#4285F4'}]}
-              onPress={() => sendSMS(selectedItem?.mobileno)}>
+              onPress={() =>
+                handleAction(() => sendSMS(selectedItem?.mobileno))
+              }>
               <Text style={styles.buttonText}>SMS</Text>
             </TouchableOpacity>
+
+            
           </View>
+          {selectedItem.landline&&<TouchableOpacity
+              style={[styles.button, {backgroundColor: '#4285F4'}]}
+              onPress={() => openLandLine(selectedItem?.landline, selectedItem.lcode)}>
+              <Text style={styles.buttonText}>Call LL</Text>
+            </TouchableOpacity>}
 
           {/* Buttons */}
           {/* <View style={styles.home_buttonContainer}>
@@ -172,11 +163,11 @@ const Details = ({route, navigation}) => {
           {/* <Text style={styles.home_profileName}>Photos</Text> */}
         </View>
 
-        <View style={styles.Ad_text}>
+        {/* <View style={styles.Ad_text}>
           <Text style={styles.Ad_title}>See how Your Ad looks like in Printed Edition</Text>
-        </View>
+        </View> */}
         {/* InnerCard1    ---    */}
-        <View style={styles.InnerCard1}>
+        {/* <View style={styles.InnerCard1}>
           <Text style={styles.InnerCard1home_title}>
             {selectedItem?.businessname ||
               selectedItem?.person ||
@@ -193,14 +184,14 @@ const Details = ({route, navigation}) => {
           </Text>
           <Text style={styles.InnerCard4home_subtitle}>
             {selectedItem?.email}
-          </Text>
+          </Text> */}
 
 
-        </View>
+        {/* </View> */}
 
-         {/* InnerCard2 */}
+        {/* InnerCard2 */}
 
-        <View style={styles.InnerCard2}>
+        {/* <View style={styles.InnerCard2}>
           <Text style={styles.InnerCard2home_title}>
             {selectedItem?.businessname ||
               selectedItem?.person ||
@@ -218,11 +209,11 @@ const Details = ({route, navigation}) => {
           <Text style={styles.InnerCard4home_subtitle}>
             {selectedItem?.email}
           </Text>
-        </View>
+        </View> */}
 
-         {/* InnerCard3 */}
+        {/* InnerCard3 */}
 
-        <View style={styles.InnerCard3}>
+        {/* <View style={styles.InnerCard3}>
           <Text style={styles.InnerCard3home_title}>
             {selectedItem?.businessname ||
               selectedItem?.person ||
@@ -240,11 +231,11 @@ const Details = ({route, navigation}) => {
           <Text style={styles.InnerCard4home_subtitle}>
             {selectedItem?.email}
           </Text>
-        </View>
+        </View> */}
 
-         {/* InnerCard4 */}
+        {/* InnerCard4 */}
 
-        <View style={styles.InnerCard4}>
+        {/* <View style={styles.InnerCard4}>
           <Text style={styles.InnerCard4home_title}>
             {selectedItem?.businessname ||
               selectedItem?.person ||
@@ -262,10 +253,10 @@ const Details = ({route, navigation}) => {
           <Text style={styles.InnerCard4home_subtitle}>
             {selectedItem?.email}
           </Text>
-        </View>
+        </View> */}
             {/* InnerCard5 */}
 
-        <View style={styles.InnerCard5}>
+        {/* <View style={styles.InnerCard5}>
           <Text style={styles.companylogo}>Logo</Text>
           <Text style={styles.InnerCard5home_title}>
             {selectedItem?.businessname ||
@@ -284,7 +275,7 @@ const Details = ({route, navigation}) => {
           <Text style={styles.InnerCard5home_subtitle}>
             {selectedItem?.email}
           </Text>
-        </View>
+        </View> */}
 
         {/* {location && (  */}
         {/* // <MapView */}
@@ -419,6 +410,7 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    width:'20%',
     padding: 6,
     marginHorizontal: 5,
     borderRadius: 8,
@@ -495,18 +487,17 @@ const styles = StyleSheet.create({
   },
 
   companylogo: {
-    left: "38%",
+    left: '38%',
     margin: 10,
     padding: 10,
     borderRadius: 50,
     borderWidth: 2,
     width: 60,
-    textAlign: "center",
-    backgroundColor: "white",
+    textAlign: 'center',
+    backgroundColor: 'white',
     fontSize: 15,
-    color: "black",
-    fontWeight:'700',
-
+    color: 'black',
+    fontWeight: '700',
   },
 
   // InnerCard4
@@ -529,7 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-
   // InnerCard5|
 
   InnerCard5: {
@@ -550,8 +540,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-
-   map: {
+  map: {
     width: '100%',
     height: 300,
     marginTop: 20,
@@ -561,7 +550,6 @@ const styles = StyleSheet.create({
     borderColor: 'black',
     padding: 10,
   },
-
 });
 
 export default Details;

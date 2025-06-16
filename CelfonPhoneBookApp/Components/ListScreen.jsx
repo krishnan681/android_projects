@@ -118,7 +118,6 @@ const ListScreen = () => {
       });
 
       await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
-      console.log('Saved:', currentFavorites);
 
       // Close modal
       setFavoriteModalVisible(false);

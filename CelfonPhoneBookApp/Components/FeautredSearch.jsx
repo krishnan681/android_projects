@@ -99,7 +99,7 @@ const FeautredSearch = () => {
 {/* Product Name Input */}
 <View style={styles.inputWrapper}>
   <TextInput
-    placeholder="Search Products"
+    placeholder="Search Products / Categories"
     value={productName}
     onChangeText={setProductName}
     onTouchStart={() => {
@@ -115,6 +115,10 @@ const FeautredSearch = () => {
       <Text style={{fontSize: 10}}>✕</Text>
     </TouchableOpacity>
   )}
+
+  <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
+        <Text style={styles.searchBtnText}>Search</Text>
+      </TouchableOpacity>
 </View>
 
 
@@ -154,9 +158,7 @@ const FeautredSearch = () => {
         </View>
       ))}
 
-      <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-        <Text style={styles.searchBtnText}>Search</Text>
-      </TouchableOpacity>
+      
     </ScrollView>
   );
 };
