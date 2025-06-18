@@ -96,7 +96,7 @@ const Promotions = ({navigation}) => {
         <TouchableOpacity
           style={styles.favbutton}
           onPress={() => handleGetStarted('Favorites')}>
-          <Text style={styles.favbuttonText}>Get Started</Text>
+          <Text style={styles.favbuttonText}>View Your Favorites</Text>
         </TouchableOpacity>
       </View>
 
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   },
   favbutton: {
     backgroundColor: 'red',
-    width: 100,
+    width: 170,
     paddingVertical: 5,
     borderRadius: 10,
     paddingStart: 10,

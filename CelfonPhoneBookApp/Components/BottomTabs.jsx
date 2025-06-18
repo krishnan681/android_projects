@@ -141,7 +141,6 @@ import {Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import * as Animatable from 'react-native-animatable';
 
-
 // Screens
 import Home from './Home';
 import Settings from './Settings';
@@ -154,7 +153,6 @@ const Tab = createBottomTabNavigator();
 const BottomTabs = ({navigation}) => {
   const {user} = useContext(AuthContext);
 
- 
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -188,41 +186,42 @@ const BottomTabs = ({navigation}) => {
       })}>
       <Tab.Screen name="Home" component={Landingpage} />
 
-      
-
       <Tab.Screen
         name="MediaPartner"
         component={MediaPartner}
         options={{headerShown: false}}
       />
 
+      {/* <Tab.Screen
+        name="Search"
+        component={Home}
+        options={{
+          tabBarButton: () => {
+            const navigation = useNavigation();
+
+            return (
+              <Animatable.View
+                animation="pulse"
+                iterationCount="infinite"
+                duration={2000}
+                easing="ease-in-out"
+                style={styles.floatingButtonContainer}>
+                <TouchableOpacity
+                  style={styles.floatingButton}
+                  onPress={() => navigation.navigate('SearchMore')}>
+                  <FontAwesome name="search" size={24} color="#fff" />
+                </TouchableOpacity>
+              </Animatable.View>
+            );
+          },
+        }}
+      /> */}
+
       <Tab.Screen
-  name="Search"
-  component={Home}
-  options={{
-    tabBarButton: () => {
-      const navigation = useNavigation();
-
-      return (
-        <Animatable.View
-          animation="pulse"
-          iterationCount="infinite"
-          duration={2000}
-          easing="ease-in-out"
-          style={styles.floatingButtonContainer}>
-          <TouchableOpacity
-            style={styles.floatingButton}
-            onPress={() => navigation.navigate('SearchMore')}>
-            <FontAwesome name="search" size={24} color="#fff" />
-          </TouchableOpacity>
-        </Animatable.View>
-      );
-    },
-  }}
-/>
-
-
-      <Tab.Screen name="Promotions" component={Promotions} options={{headerShown: false}} />
+        name="Promotions"
+        component={Promotions}
+        options={{headerShown: false}}
+      />
 
       <Tab.Screen name="Settings" component={Settings} />
     </Tab.Navigator>
@@ -257,13 +256,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   floatingButtonContainer: {
-  
-  justifyContent: 'center',
-  alignItems: 'center',
-  width: 70,
-  height: 70,
-},
-
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 70,
+    height: 70,
+  },
 });
 
 export default BottomTabs;

@@ -49,46 +49,46 @@
  
 // const App = () => {
 
-//   // const [initialRoute, setInitialRoute] = useState(null);
+//   const [initialRoute, setInitialRoute] = useState(null);
 //   const [isFirstLaunch, setIsFirstLaunch] = useState(null);
 
 
-//   // useEffect(() => {
-//   //   const initializeApp = async () => {
-//   //     try {
-//   //       const isFirstLaunch = await AsyncStorage.getItem('isFirstLaunch');
-//   //       if (isFirstLaunch === null) {
-//   //         setIsFirstLaunch(true)
-//   //         await AsyncStorage.setItem('isFirstLaunch', 'false');
-//   //       }else{
-//   //         setIsFirstLaunch(false)
-//   //       }
+//   useEffect(() => {
+//     const initializeApp = async () => {
+//       try {
+//         const isFirstLaunch = await AsyncStorage.getItem('isFirstLaunch');
+//         if (isFirstLaunch === null) {
+//           setIsFirstLaunch(true)
+//           await AsyncStorage.setItem('isFirstLaunch', 'false');
+//         }else{
+//           setIsFirstLaunch(false)
+//         }
 
-//   //       const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-//   //       const user = await AsyncStorage.getItem("user");
-//   //       const userData = await AsyncStorage.getItem('userData');
+//         const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+//         const user = await AsyncStorage.getItem("user");
+//         const userData = await AsyncStorage.getItem('userData');
 
-//   //       if (isLoggedIn === 'true' && user) {
-//   //         setInitialRoute('Home');
-//   //       } else {
-//   //         setInitialRoute('Login');
-//   //       }
-//   //     } catch (error) {
-//   //       console.error('Initialization error:', error);
-//   //       setInitialRoute('Login');
-//   //     }
-//   //   };
+//         if (isLoggedIn === 'true' && user) {
+//           setInitialRoute('Home');
+//         } else {
+//           setInitialRoute('Login');
+//         }
+//       } catch (error) {
+//         console.error('Initialization error:', error);
+//         setInitialRoute('Login');
+//       }
+//     };
 
-//   //   initializeApp();
-//   // }, []);
+//     initializeApp();
+//   }, []);
 
-//   // if (!initialRoute) {
-//   //   return (
-//   //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-//   //       <ActivityIndicator size="large" />
-//   //     </View>
-//   //   );
-//   // }
+//   if (!initialRoute) {
+//     return (
+//       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+//         <ActivityIndicator size="large" />
+//       </View>
+//     );
+//   }
 
 //   // const [isFirstLaunch, setIsFirstLaunch] = useState(null);
 
@@ -114,20 +114,20 @@
 //     return null; // Prevent rendering until check is complete
 //   }
 
-//   // useEffect(() => {
-//   //   const checkLogin = async () => {
-//   //     const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
-//   //     const userData = await AsyncStorage.getItem("userData");
+//   useEffect(() => {
+//     const checkLogin = async () => {
+//       const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
+//       const userData = await AsyncStorage.getItem("userData");
 
-//   //     if (isLoggedIn === "true" && userData) {
-//   //       navigation.replace("Home");
-//   //     } else {
-//   //       navigation.replace("Login");
-//   //     }
-//   //   };
+//       if (isLoggedIn === "true" && userData) {
+//         navigation.replace("Home");
+//       } else {
+//         navigation.replace("Login");
+//       }
+//     };
 
-//   //   checkLogin();
-//   // }, []);
+//     checkLogin();
+//   }, []);
 
 //   return (    
 //     <AuthProvider >

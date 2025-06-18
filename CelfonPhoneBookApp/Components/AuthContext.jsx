@@ -1,6 +1,7 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import axios from "axios";
 import { Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Create the AuthContext
 export const AuthContext = createContext();
@@ -8,6 +9,24 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState("");
   const [userData, setUserData] = useState("");
+  //Persist user data in localStorage
+useEffect(()=>{
+  const loadUserFromStorage = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+      const storedUserData = await AsyncStorage.getItem("userData");
+
+      if (storedUser && storedUserData) {
+        setUser(JSON.parse(storedUser));
+        setUserData(JSON.parse(storedUserData));
+      }
+    } catch (error) {
+      console.error("Failed to load from AsyncStorage", error);
+    }
+  };
+
+  loadUserFromStorage();
+},[])
 
   // Login Function
   const Login = async (username, password, navigation) => {
@@ -30,6 +49,8 @@ export const AuthProvider = ({ children }) => {
       if (response.data.valid) {
         setUser(response.data.businessname || response.data.person);
         setUserData(response.data);
+        await AsyncStorage.setItem("user", JSON.stringify(response.data.businessname || response.data.person));      
+        await AsyncStorage.setItem("userData", JSON.stringify(response.data));
         navigation.navigate("Home");
       } else {
         Alert.alert("User Not Found", "Please sign up.");
@@ -42,9 +63,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout Function
-  const logout = (navigation) => {
+  const logout = async (navigation) => {
     setUser("");
     setUserData("");
+    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("userData");
     navigation.navigate("Login");
   };
 

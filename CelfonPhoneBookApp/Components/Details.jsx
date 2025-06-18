@@ -21,30 +21,9 @@ const Details = ({route, navigation}) => {
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
-  const [usageCount, setUsageCount] = useState(0);
-
-  const handleAction = actionCallback => {
-    if (usageCount >= 3) {
-      Alert.alert(
-        'Limit Reached',
-        'You have reached your free usage limit. Please subscribe to continue.',
-        [{text: 'OK', onPress: () => navigation.navigate('Subscription')}],
-      );
-      return;
-    }
-
-    setUsageCount(prev => prev + 1);
-    actionCallback(); // run the actual action
-  };
 
   const openDialpad = number => {
     let phoneUrl = `tel:${number}`;
-    Linking.openURL(phoneUrl).catch(() =>
-      Alert.alert('Error', 'Dial pad not supported'),
-    );
-  };
-  const openLandLine = (number, code) => {
-    let phoneUrl = `tel: ${code}${number}`;
     Linking.openURL(phoneUrl).catch(() =>
       Alert.alert('Error', 'Dial pad not supported'),
     );
@@ -61,8 +40,6 @@ const Details = ({route, navigation}) => {
   const sendSMS = number => {
     Linking.openURL(`sms:${number}`);
   };
-
-  console.log(selectedItem.lcode)
 
   return (
     <ScrollView contentContainerStyle={styles.home_container}>
@@ -85,56 +62,39 @@ const Details = ({route, navigation}) => {
               selectedItem?.person ||
               'Name not found'}
           </Text>
-          <Text style={styles.home_subtitle}>{selectedItem?.person? selectedItem.person : ''}</Text>
-          <Text style={styles.home_subtitle}>{selectedItem.landline?selectedItem.landline:""}</Text>
           <Text style={styles.home_subtitle}>{selectedItem?.product}</Text>
           <Text style={styles.home_subtitle}>
-            {selectedItem.mobileno&&selectedItem?.mobileno.slice(0, 5)}xxxxx
+            {selectedItem?.mobileno.slice(0, 5)}xxxxx
           </Text>
           <Text style={styles.home_subtitle}>
-            {selectedItem?.address},{selectedItem?.city},{selectedItem?.pincode}{' '}
+            {selectedItem?.address}, {selectedItem?.city.trim()}, {selectedItem?.pincode}
           </Text>
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#6A0DAD'}]}
-              onPress={() =>
-                handleAction(() => openDialpad(selectedItem?.mobileno))
-              }>
+              onPress={() => openDialpad(selectedItem?.mobileno)}>
               <Text style={styles.buttonText}>Dial</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#25D366'}]}
-              onPress={() =>
-                handleAction(() => openWhatsApp(selectedItem?.mobileno))
-              }>
+              onPress={() => openWhatsApp(selectedItem?.mobileno)}>
               <Text style={styles.buttonText}>WhatsApp</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#FF9900'}]}
-              onPress={() =>
-                handleAction(() => sendEmail(selectedItem?.email))
-              }>
+              onPress={() => sendEmail(selectedItem?.email)}>
               <Text style={styles.buttonText}>Email</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, {backgroundColor: '#4285F4'}]}
-              onPress={() =>
-                handleAction(() => sendSMS(selectedItem?.mobileno))
-              }>
+              onPress={() => sendSMS(selectedItem?.mobileno)}>
               <Text style={styles.buttonText}>SMS</Text>
             </TouchableOpacity>
-
-            
           </View>
-          {selectedItem.landline&&<TouchableOpacity
-              style={[styles.button, {backgroundColor: '#4285F4'}]}
-              onPress={() => openLandLine(selectedItem?.landline, selectedItem.lcode)}>
-              <Text style={styles.buttonText}>Call LL</Text>
-            </TouchableOpacity>}
 
           {/* Buttons */}
           {/* <View style={styles.home_buttonContainer}>
@@ -184,12 +144,12 @@ const Details = ({route, navigation}) => {
           </Text>
           <Text style={styles.InnerCard4home_subtitle}>
             {selectedItem?.email}
-          </Text> */}
+          </Text>
 
 
-        {/* </View> */}
+        </View> */}
 
-        {/* InnerCard2 */}
+         {/* InnerCard2 */}
 
         {/* <View style={styles.InnerCard2}>
           <Text style={styles.InnerCard2home_title}>
@@ -211,7 +171,7 @@ const Details = ({route, navigation}) => {
           </Text>
         </View> */}
 
-        {/* InnerCard3 */}
+         {/* InnerCard3 */}
 
         {/* <View style={styles.InnerCard3}>
           <Text style={styles.InnerCard3home_title}>
@@ -233,7 +193,7 @@ const Details = ({route, navigation}) => {
           </Text>
         </View> */}
 
-        {/* InnerCard4 */}
+         {/* InnerCard4 */}
 
         {/* <View style={styles.InnerCard4}>
           <Text style={styles.InnerCard4home_title}>
@@ -276,18 +236,6 @@ const Details = ({route, navigation}) => {
             {selectedItem?.email}
           </Text>
         </View> */}
-
-        {/* {location && (  */}
-        {/* // <MapView */}
-        {/* //   provider={PROVIDER_DEFAULT}
-        //   style={styles.map}
-        //   region={location}
-        //   zoomEnabled={true}
-        //   scrollEnabled={true} */}
-        {/* // > */}
-        {/* //   <Marker coordinate={location} title="Location" /> */}
-        {/* // </MapView> */}
-      {/* )} */}
       </View>
     </ScrollView>
   );
@@ -410,7 +358,6 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    width:'20%',
     padding: 6,
     marginHorizontal: 5,
     borderRadius: 8,
@@ -487,17 +434,18 @@ const styles = StyleSheet.create({
   },
 
   companylogo: {
-    left: '38%',
+    left: "38%",
     margin: 10,
     padding: 10,
     borderRadius: 50,
     borderWidth: 2,
     width: 60,
-    textAlign: 'center',
-    backgroundColor: 'white',
+    textAlign: "center",
+    backgroundColor: "white",
     fontSize: 15,
-    color: 'black',
-    fontWeight: '700',
+    color: "black",
+    fontWeight:'700',
+
   },
 
   // InnerCard4
@@ -520,6 +468,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
+
   // InnerCard5|
 
   InnerCard5: {
@@ -540,16 +489,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  map: {
-    width: '100%',
-    height: 300,
-    marginTop: 20,
-    marginBottom: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'black',
-    padding: 10,
-  },
 });
 
 export default Details;

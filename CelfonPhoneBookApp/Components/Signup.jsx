@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {
   View,
-  Text,
+  Text, // Ensure Text is imported
   TextInput,
   StyleSheet,
   ScrollView,
@@ -25,7 +25,7 @@ const Signup = ({navigation}) => {
   const [mypincode, setPincode] = useState('');
   const [myproduct, setProduct] = useState('');
   const [mylandLine, setLandLine] = useState('');
-  const [myLcode, setLcode] = useState('');
+  const [mylcode, setlcode] = useState('');
   const [myemail, setEmail] = useState('');
   const [mymobileno, setMobileno] = useState('');
   const [myprefix, setPrefix] = useState('M/s.'); // Default to M/S for business
@@ -48,6 +48,12 @@ const Signup = ({navigation}) => {
   });
 
   const [dateTime, setDateTime] = useState('');
+
+  // Set current date and time on component mount
+  useEffect(() => {
+    const now = new Date();
+    setDateTime(now.toLocaleString());
+  }, []);
 
   // Toggle business / personal mode
   const toggleMode = mode => {
@@ -78,7 +84,7 @@ const Signup = ({navigation}) => {
     setPincode('');
     setProduct('');
     setLandLine('');
-    setLcode('');
+    setlcode('');
     setEmail('');
     setPromoCode('');
     setIsRegistered(false);
@@ -96,15 +102,11 @@ const Signup = ({navigation}) => {
   };
   const handlePincode = text => setPincode(text.replace(/[^0-9]/g, ''));
   const handleLandline = text => setLandLine(text.replace(/[^0-9]/g, ''));
-  const handleStdCode = text => setLcode(text.replace(/[^0-9]/g, ''));
-  const handleCity = () => {
-      if (`${isBusinessMode? mybusinessname : myperson}`) {
-        setHelpTextVisible('cityName');
-      } else {
-        Alert.alert(`${isBusinessMode ? 'Enter Business Name':'Enter Person Name'}`);
-        resetForm();
-      }
-    };
+  const handleStdCode = text => setlcode(text.replace(/[^0-9]/g, ''));
+
+  const handleCityName = text => {
+    setMycity(text);
+  };
 
   // Help text controls
   const resetAllHelpTexts = () =>
@@ -117,51 +119,121 @@ const Signup = ({navigation}) => {
     setHelpText(prev => ({...prev, [field]: true}));
   };
 
+  // New function for onBlur validation
+ const validateMobileOnBlur = () => {
+    if (mymobileno.length > 0 && mymobileno.length < 10) {
+      Alert.alert('Invalid Mobile Number', 'Mobile number must be 10 digits.', [
+        { text: 'OK', onPress: () => setMobileno('') } // Added this line
+      ]);
+    }
+  };
+
+
   // Check mobile uniqueness on server
   const checkMobileNumber = async mobile => {
-    // immediately reject first digit 1–5
+    setMobileno(mobile); // Update state immediately
+
+    // Validate first digit (immediate feedback)
     if (mobile.length === 1 && !['6', '7', '8', '9'].includes(mobile[0])) {
       Alert.alert(
         'Invalid Start',
         'Mobile number must start with 6, 7, 8, or 9.',
       );
-      setMobileno('');
+      setMobileno(''); // Clear invalid input
       return;
     }
-    if (mobile.length !== 10) return;
 
-    try {
-      const response = await fetch(
-        'https://signpostphonebook.in/client_insert_data_for_new_database.php',
-        {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({mobileno: mobile}),
-        },
-      );
-      const result = await response.json();
-      if (result.registered) {
-        setIsRegistered(true);
-        Alert.alert(
-          'Mobile Number Exists',
-          `Already registered under: ${
-            result.businessname || result.person || 'Unknown'
-          }`,
+    // Only proceed with API check if it's a 10-digit number
+    if (mobile.length === 10) {
+      try {
+        const response = await fetch(
+          'https://signpostphonebook.in/client_insert_data_for_new_database.php',
+          {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({mobileno: mobile, action: 'check_mobile'}), // Added action for clarity on server
+          },
         );
-        setMobileno('');
-      } else {
-        setIsRegistered(false);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server response not OK:', response.status, errorText);
+          Alert.alert(
+            'Error',
+            `Server error during mobile check: ${response.status} - ${errorText.substring(
+              0,
+              100,
+            )}...`,
+          );
+          setIsRegistered(false); // Assume not registered on server error
+          return;
+        }
+
+        const textResponse = await response.text();
+        if (!textResponse) {
+          // If the server returns no content for a successful check, assume not registered
+          setIsRegistered(false);
+          return;
+        }
+
+        let result;
+        try {
+          result = JSON.parse(textResponse);
+        } catch (jsonError) {
+          console.error(
+            'JSON Parse Error for mobile check:',
+            jsonError,
+            'Raw response:',
+            textResponse,
+          );
+          Alert.alert('Error', 'Invalid JSON response from server during mobile check.');
+          setIsRegistered(false); // Assume not registered on JSON parse error
+          return;
+        }
+
+        if (result.registered) {
+          setIsRegistered(true);
+          Alert.alert(
+            'Mobile Number Exists',
+            `Already registered under: ${
+              result.businessname || result.person || 'Unknown'
+            }`,
+            [
+              { text: 'OK', onPress: () => setMobileno('') } // Clear on OK
+            ]
+          );
+        } else {
+          setIsRegistered(false);
+        }
+      } catch (err) {
+        console.error('Fetch or processing error in checkMobileNumber:', err);
+        Alert.alert(
+          'Error',
+          'Unable to verify mobile number. Please check your internet connection.',
+        );
+        setIsRegistered(false); // Assume not registered on network error
       }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Unable to verify mobile number.');
+    } else {
+      // If mobile number is not 10 digits, reset registered status
+      setIsRegistered(false);
     }
   };
 
   const insertRecord = async () => {
-    if (isRegistered) {
-      return Alert.alert('Error', 'Mobile number already registered.');
+    // Re-validate mobile number before final submission, in case user edited it
+    if (mymobileno.length !== 10 || !['6', '7', '8', '9'].includes(mymobileno[0])) {
+      return Alert.alert(
+        'Validation Error',
+        'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.',
+      );
     }
+
+    if (isRegistered) {
+      return Alert.alert('Error', 'Mobile number already registered. Please use a different number or log in.');
+    }
+
+    let payloadData = {};
+    let validationError = '';
 
     // ✅ Business Mode
     if (isBusinessMode) {
@@ -173,68 +245,30 @@ const Signup = ({navigation}) => {
         !mymobileno.trim() ||
         !myproduct.trim()
       ) {
-        return Alert.alert(
-          'Validation Error',
-          'Please fill all required business fields.',
-        );
+        validationError = 'Please fill all required business fields.';
+      } else if (mypincode.length !== 6) {
+        validationError = 'Pincode must be 6 digits.';
       }
 
-      if (mypincode.length !== 6) {
-        return Alert.alert('Validation Error', 'Pincode must be 6 digits.');
-      }
-
-      if (mymobileno.length !== 10) {
-        return Alert.alert(
-          'Validation Error',
-          'Mobile number must be 10 digits.',
-        );
-      }
-
-      const businessData = {
+      payloadData = {
         businessname: mybusinessname,
         address: mydoorno,
         city: mycity,
         pincode: mypincode,
         prefix: 'M/s.',
         mobileno: mymobileno,
-        email: myemail, // optional, but included if available
+        email: myemail,
         product: myproduct,
         landline: mylandLine,
-        lcode: myLcode,
+        lcode: mylcode,
         promocode: mypromoCode,
         person: '',
         personprefix: '',
+        action: 'insert_business', // Added action for clarity
       };
-
-      try {
-        const res = await fetch(
-          'https://signpostphonebook.in/client_insert_data_for_new_database.php',
-          {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(businessData),
-          },
-        );
-
-        const json = await res.json();
-
-        if (json.Message) {
-          Alert.alert('Success', json.Message);
-          resetForm();
-          navigation.navigate('Login');
-        } else {
-          Alert.alert('Error', 'Unexpected server response.');
-        }
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Error', error.message);
-      }
-
-      // ✅ Personal Mode
-    } else {
+    }
+    // ✅ Personal Mode
+    else {
       if (
         !myperson.trim() ||
         !myprefix.trim() ||
@@ -243,31 +277,14 @@ const Signup = ({navigation}) => {
         !mypincode.trim() ||
         !mymobileno.trim()
       ) {
-        return Alert.alert(
-          'Validation Error',
-          'Please fill all required personal fields.',
-        );
+        validationError = 'Please fill all required personal fields.';
+      } else if (myprefix !== 'Mr.' && myprefix !== 'Ms.') {
+        validationError = 'Please select prefix Mr. or Ms.';
+      } else if (mypincode.length !== 6) {
+        validationError = 'Pincode must be 6 digits.';
       }
 
-      if (myprefix !== 'Mr.' && myprefix !== 'Ms.') {
-        return Alert.alert(
-          'Validation Error',
-          'Please select prefix Mr. or Ms.',
-        );
-      }
-
-      if (mypincode.length !== 6) {
-        return Alert.alert('Validation Error', 'Pincode must be 6 digits.');
-      }
-
-      if (mymobileno.length !== 10) {
-        return Alert.alert(
-          'Validation Error',
-          'Mobile number must be 10 digits.',
-        );
-      }
-
-      const personalData = {
+      payloadData = {
         person: myperson,
         address: mydoorno,
         city: mycity,
@@ -275,40 +292,84 @@ const Signup = ({navigation}) => {
         prefix: '',
         personprefix: myprefix,
         mobileno: mymobileno,
-        email: myemail, // optional, included if available
-        product: '', // not applicable in personal mode
+        email: myemail,
+        product: '',
         landline: mylandLine,
-        lcode: myLcode,
+        lcode: mylcode,
         promocode: mypromoCode,
         businessname: '',
+        action: 'insert_person', // Added action for clarity
       };
+    }
 
-      try {
-        const res = await fetch(
-          'https://signpostphonebook.in/client_insert_data_for_new_database.php',
-          {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(personalData),
+    if (validationError) {
+      return Alert.alert('Validation Error', validationError);
+    }
+
+    try {
+      const res = await fetch(
+        'https://signpostphonebook.in/client_insert_data_for_new_database.php',
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify(payloadData),
+        },
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Server response not OK:', res.status, errorText);
+        Alert.alert(
+          'Error',
+          `Server error during registration: ${res.status} - ${errorText.substring(
+            0,
+            100,
+          )}...`,
         );
-
-        const json = await res.json();
-
-        if (json.Message) {
-          Alert.alert('Success', json.Message);
-          resetForm();
-          navigation.navigate('Login');
-        } else {
-          Alert.alert('Error', 'Unexpected server response.');
-        }
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Error', error.message);
+        return;
       }
+
+      const textResponse = await res.text();
+      if (!textResponse) {
+        Alert.alert('Error', 'Empty response from server after submission.');
+        return;
+      }
+
+      let json;
+      try {
+        json = JSON.parse(textResponse);
+      } catch (jsonError) {
+        console.error(
+          'JSON Parse Error for submission:',
+          jsonError,
+          'Raw response:',
+          textResponse,
+        );
+        Alert.alert('Error', 'Invalid JSON response from server after submission.');
+        return;
+      }
+
+      if (json.Message) {
+        Alert.alert('Success', json.Message);
+        resetForm();
+        navigation.navigate('Login');
+      } else {
+        // If no 'Message' but no error, log the full response for debugging
+        console.log('Unexpected successful response without message:', json);
+        Alert.alert(
+          'Error',
+          json.error || json.message || 'Unexpected successful server response.',
+        );
+      }
+    } catch (error) {
+      console.error('Fetch error during record insertion:', error);
+      Alert.alert(
+        'Error',
+        `Failed to submit record: ${error.message || 'Network error'}`,
+      );
     }
   };
 
@@ -323,7 +384,7 @@ const Signup = ({navigation}) => {
           resizeMode="contain"
         />
         <Text style={styles.title}>Create Your Account</Text>
-        <Text style={styles.dateTime}>{dateTime}</Text>
+        {/* <Text style={styles.dateTime}>{dateTime}</Text>  */}
       </LinearGradient>
 
       <View style={styles.container}>
@@ -372,9 +433,11 @@ const Signup = ({navigation}) => {
             label="Mobile Number *"
             value={mymobileno}
             onChangeText={text => {
-              setMobileno(text);
-              checkMobileNumber(text);
+              // Only allow digits for mobile number
+              const filteredText = text.replace(/[^0-9]/g, '');
+              checkMobileNumber(filteredText); // API check ONLY if 10 digits, otherwise just updates state
             }}
+            onBlur={validateMobileOnBlur} // ADDED: New onBlur handler
             placeholder="Enter 10-digit mobile number"
             keyboardType="phone-pad"
             maxLength={10}
@@ -399,7 +462,7 @@ const Signup = ({navigation}) => {
               <Input
                 label="City *"
                 value={mycity}
-                onChangeText={handleCity}
+                onChangeText={handleCityName} // Using the simplified handleCityName
                 placeholder="Enter city"
                 onFocus={() => setHelpTextVisible('city')}
               />
@@ -465,7 +528,7 @@ const Signup = ({navigation}) => {
               {/* STD Code */}
               <Input
                 label="L Code"
-                value={myLcode}
+                value={mylcode}
                 onChangeText={handleStdCode}
                 placeholder="Enter L code"
                 onFocus={() => setHelpTextVisible('std')}
@@ -553,7 +616,7 @@ const Signup = ({navigation}) => {
               <Input
                 label="City *"
                 value={mycity}
-                onChangeText={handleCityName}
+                onChangeText={handleCityName} // Using the simplified handleCityName
                 placeholder="Enter city"
                 onFocus={() => setHelpTextVisible('city')}
               />
@@ -582,7 +645,8 @@ const Signup = ({navigation}) => {
                 onChangeText={setDoorno}
                 placeholder="Enter address"
                 multiline
-                
+                numberOfLines={3}
+                onFocus={() => setHelpTextVisible('address')}
               />
 
               {helpText.address && (
@@ -640,8 +704,10 @@ const Input = ({
   multiline,
   numberOfLines,
   onFocus,
+  onBlur,
 }) => (
   <View style={{marginBottom: 15}}>
+    {/* THIS IS THE FIX: label must be wrapped in <Text> */}
     <Text style={styles.inputLabel}>{label}</Text>
     <TextInput
       value={value}
@@ -656,8 +722,9 @@ const Input = ({
       maxLength={maxLength}
       multiline={multiline}
       numberOfLines={numberOfLines}
-      autoCapitalize="words"
+      autoCapitalize="words" // Keep this for names/addresses, remove for email
       onFocus={onFocus}
+      onBlur={onBlur}
     />
   </View>
 );
