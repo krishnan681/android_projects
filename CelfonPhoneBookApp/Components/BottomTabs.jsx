@@ -192,7 +192,7 @@ const BottomTabs = ({navigation}) => {
         options={{headerShown: false}}
       />
 
-      {/* <Tab.Screen
+      <Tab.Screen
         name="Search"
         component={Home}
         options={{
@@ -215,7 +215,7 @@ const BottomTabs = ({navigation}) => {
             );
           },
         }}
-      /> */}
+      />
 
       <Tab.Screen
         name="Promotions"
